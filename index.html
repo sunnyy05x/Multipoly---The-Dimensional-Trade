@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -997,26 +997,11 @@
             <input type="text" id="aiInput" placeholder="Ask a physics question..." autocomplete="off">
             <button class="ai-send" id="aiSend" title="Send">➤</button>
         </div>
-        <div id="aiKeyConfig"
-            style="padding:10px;border-top:1px solid var(--border);display:none;background:rgba(0,0,0,0.5)">
-            <p style="font-size:0.7rem;margin-bottom:5px;color:#ef5350">⚠️ Connection Failed. Enter valid API Key:</p>
-            <div style="display:flex;gap:5px">
-                <input type="password" id="apiKeyInput" placeholder="Paste Gemini/OpenAI Key"
-                    style="flex:1;background:#0a0e1a;border:1px solid var(--border);color:white;padding:5px;border-radius:4px">
-                <button onclick="saveApiKey()"
-                    style="background:var(--green);border:none;color:black;padding:5px 10px;border-radius:4px;cursor:pointer">Save</button>
-                <button onclick="resetApiKey()"
-                    style="background:#ef5350;border:none;color:white;padding:5px 10px;border-radius:4px;cursor:pointer"
-                    title="Reset to Default">Reset</button>
-            </div>
-            <p style="font-size:0.6rem;opacity:0.6;margin-top:5px">Get key from <a
-                    href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--cyan)">Google AI
-                    Studio</a></p>
-        </div>
+
     </div>
 
     <script type="module">
-        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
 
         // ── SVG TOKENS ──
         const SVG_ATOM = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="8" fill="#ff4081"/><ellipse cx="50" cy="50" rx="35" ry="12" fill="none" stroke="#ff4081" stroke-width="2"/><ellipse cx="50" cy="50" rx="35" ry="12" fill="none" stroke="#ff4081" stroke-width="2" transform="rotate(60 50 50)"/><ellipse cx="50" cy="50" rx="35" ry="12" fill="none" stroke="#ff4081" stroke-width="2" transform="rotate(120 50 50)"/><circle cx="85" cy="50" r="3" fill="#ff80ab"/><circle cx="32" cy="28" r="3" fill="#ff80ab"/><circle cx="32" cy="72" r="3" fill="#ff80ab"/></svg>`;
@@ -2205,80 +2190,13 @@
 4. **No Markdown**: Use only HTML tags.`;
 
         // ══════════════════════════════════════════
-        // ── GEMINI / OPENAI API INTEGRATION ──
+        // ── OPENAI API INTEGRATION ──
         // ══════════════════════════════════════════
-        const DEFAULT_API_KEY = 'sk-521cb07d869d4ff8b5ad4243a946d150';
+        const OPENAI_API_KEY = 'sk-521cb07d869d4ff8b5ad4243a946d150';
 
-        function getApiKey() {
-            return localStorage.getItem('gemini_api_key') || DEFAULT_API_KEY;
-        }
 
-        // Initialize SDK (Lazily or re-init on key change)
-        let genAI = null;
-        let model = null;
-        let chatSession = null;
 
-        function initAI() {
-            const key = getApiKey();
-            if (key.startsWith('sk-')) {
-                // OpenAI Mode
-                genAI = null; model = null; chatSession = null;
-                console.log('🤖 AI Mode: OpenAI (sk- key detected)');
-            } else {
-                // Gemini Mode
-                try {
-                    genAI = new GoogleGenerativeAI(key);
-                    model = genAI.getGenerativeModel({
-                        model: "gemini-1.5-flash",
-                        systemInstruction: GEMINI_SYSTEM_PROMPT
-                    });
-                    chatSession = null;
-                    console.log('🤖 AI Mode: Gemini');
-                } catch (e) { console.warn('Gemini Init Failed:', e); }
-            }
-        }
 
-        initAI();
-
-        window.saveApiKey = function () {
-            const inp = document.getElementById('apiKeyInput');
-            if (inp.value.trim()) {
-                localStorage.setItem('gemini_api_key', inp.value.trim());
-                initAI();
-                document.getElementById('aiKeyConfig').style.display = 'none';
-                aiAddMsg('🔑 API Key updated! Try asking again.', false);
-            }
-        };
-
-        window.resetApiKey = function () {
-            localStorage.removeItem('gemini_api_key');
-            initAI();
-            document.getElementById('aiKeyConfig').style.display = 'none';
-            aiAddMsg('🔄 API Key reset to Default (OpenAI).', false);
-        };
-
-        async function aiCallOpenAI(key, userMessage) {
-            const url = 'https://api.openai.com/v1/chat/completions';
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${key}`
-                },
-                body: JSON.stringify({
-                    model: "gpt-4o-mini",
-                    messages: [
-                        { role: "system", content: GEMINI_SYSTEM_PROMPT },
-                        { role: "user", content: userMessage }
-                    ],
-                    max_tokens: 1000,
-                    temperature: 0.8
-                })
-            });
-            const data = await response.json();
-            if (data.error) throw new Error(data.error.message);
-            return mdToHtml(data.choices[0].message.content);
-        }
 
         // mdToHtml helper
         function mdToHtml(text) {
@@ -2292,55 +2210,31 @@
                 .replace(/\n/g, '<br>');
         }
 
-        async function aiCallGemini(userMessage) {
-            const key = getApiKey();
-
-            // 1. Check for OpenAI Key
-            if (key.startsWith('sk-')) {
-                try {
-                    return await aiCallOpenAI(key, userMessage);
-                } catch (err) {
-                    document.getElementById('aiKeyConfig').style.display = 'block';
-                    aiAddMsg(`⚠️ <strong>OpenAI Error</strong>: ${err.message}.<br>Check your key.`, false);
-                    return aiRespondLocal(userMessage);
-                }
-            }
-
-            // 2. Default to Gemini
+        async function aiCallAI(userMessage) {
+            const url = 'https://api.openai.com/v1/chat/completions';
             try {
-                if (!chatSession && model) {
-                    chatSession = model.startChat({
-                        history: [],
-                        generationConfig: { maxOutputTokens: 1000, temperature: 0.8 }
-                    });
-                }
-
-                if (chatSession) {
-                    const result = await chatSession.sendMessage(userMessage);
-                    return mdToHtml(result.response.text());
-                } else {
-                    throw new Error('Gemini model not initialized');
-                }
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + OPENAI_API_KEY
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4o-mini',
+                        messages: [
+                            { role: 'system', content: GEMINI_SYSTEM_PROMPT },
+                            { role: 'user', content: userMessage }
+                        ],
+                        max_tokens: 1000,
+                        temperature: 0.8
+                    })
+                });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+                return mdToHtml(data.choices[0].message.content);
             } catch (err) {
-                console.warn('Gemini SDK failed, trying raw REST API...', err);
-                try {
-                    // Raw REST fallback for Gemini
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: GEMINI_SYSTEM_PROMPT + '\n\nUser: ' + userMessage }] }]
-                        })
-                    });
-                    const data = await response.json();
-                    if (data.error) throw new Error(data.error.message);
-                    return mdToHtml(data.candidates[0].content.parts[0].text);
-                } catch (restErr) {
-                    document.getElementById('aiKeyConfig').style.display = 'block';
-                    aiAddMsg(`⚠️ <strong>Connection Failed</strong>: ${restErr.message}.<br>Please update your API Key below.`, false);
-                    return aiRespondLocal(userMessage);
-                }
+                 aiAddMsg('âš ï¸ <strong>OpenAI Error</strong>: ' + err.message, false);
+                 return aiRespondLocal(userMessage);
             }
         }
 
@@ -2370,7 +2264,7 @@
             container.scrollTop = container.scrollHeight;
 
             try {
-                const ans = await aiCallGemini(q);
+                const ans = await aiCallAI(q);
                 typing.remove();
                 aiAddMsg(ans, false);
             } catch (e) {
