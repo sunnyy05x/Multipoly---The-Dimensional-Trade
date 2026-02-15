@@ -1,0 +1,2279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multipoly: The Dimensional Trade</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        :root {
+            --bg: #0a0e1a;
+            --grid: #1a2744;
+            --cyan: #00e5ff;
+            --gold: #ffd700;
+            --text: #c8d6e5;
+            --panel: #0d1321;
+            --border: #1e3a5f;
+            --brown: #8B4513;
+            --ltblue: #4fc3f7;
+            --pink: #f06292;
+            --orange: #ff9800;
+            --red: #ef5350;
+            --green: #66bb6a;
+            --station: #9c27b0;
+            --special: #607d8b
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            background-image: linear-gradient(rgba(0, 229, 255, .04) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 229, 255, .04) 1px, transparent 1px);
+            background-size: 40px 40px
+        }
+
+        h1 {
+            color: var(--cyan);
+            text-align: center;
+            font-size: 1.4rem;
+            margin: 8px 0;
+            text-shadow: 0 0 15px rgba(0, 229, 255, .5);
+            letter-spacing: 3px;
+            text-transform: uppercase
+        }
+
+        .board-container {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            grid-template-rows: repeat(11, 1fr);
+            width: min(95vw, 750px);
+            height: min(95vw, 750px);
+            gap: 1px;
+            background: var(--grid);
+            border: 2px solid var(--cyan);
+            box-shadow: 0 0 30px rgba(0, 229, 255, .15);
+            position: relative
+        }
+
+        .tile {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: .48rem;
+            padding: 1px;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all .2s
+        }
+
+        .tile:hover {
+            border-color: var(--cyan);
+            z-index: 2;
+            box-shadow: 0 0 8px rgba(0, 229, 255, .3)
+        }
+
+        .tile .color-bar {
+            position: absolute;
+            height: 4px;
+            width: 100%;
+            left: 0
+        }
+
+        .tile.bottom .color-bar,
+        .tile.top .color-bar {
+            bottom: 0
+        }
+
+        .tile.bottom .color-bar {
+            top: 0;
+            bottom: auto
+        }
+
+        .tile.left .color-bar {
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%
+        }
+
+        .tile.right .color-bar {
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%
+        }
+
+        .tile .t-name {
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.1;
+            font-size: .45rem;
+            margin: 1px 0
+        }
+
+        .tile .t-cost {
+            color: var(--gold);
+            font-size: .42rem
+        }
+
+        .tile .t-formula {
+            color: var(--cyan);
+            font-size: .4rem
+        }
+
+        .tile .players {
+            display: flex;
+            gap: 2px;
+            position: absolute;
+            bottom: 2px;
+            right: 2px
+        }
+
+        .player-token {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 3px rgba(255, 255, 255, .5))
+        }
+
+        .player-token svg {
+            width: 100%;
+            height: 100%
+        }
+
+        .tile .house-count {
+            position: absolute;
+            top: 1px;
+            right: 2px;
+            color: var(--gold);
+            font-size: .42rem;
+            font-weight: bold
+        }
+
+        .center {
+            grid-column: 2/11;
+            grid-row: 2/11;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            overflow: hidden
+        }
+
+        .center h2 {
+            color: var(--cyan);
+            font-size: .9rem;
+            margin-bottom: 5px;
+            letter-spacing: 2px
+        }
+
+        .dice-area {
+            display: flex;
+            gap: 15px;
+            margin: 8px 0
+        }
+
+        .die {
+            width: 40px;
+            height: 40px;
+            background: var(--bg);
+            border: 2px solid var(--cyan);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--gold);
+            transition: transform .3s
+        }
+
+        .die.rolling {
+            animation: roll .4s ease-out
+        }
+
+        @keyframes roll {
+            0% {
+                transform: rotateZ(0)
+            }
+
+            50% {
+                transform: rotateZ(180deg) scale(1.2)
+            }
+
+            100% {
+                transform: rotateZ(360deg)
+            }
+        }
+
+        .log {
+            flex: 1;
+            width: 100%;
+            overflow-y: auto;
+            font-size: .55rem;
+            border: 1px solid var(--border);
+            padding: 5px;
+            margin-top: 5px;
+            background: rgba(0, 0, 0, .3);
+            max-height: 200px
+        }
+
+        .log div {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .05)
+        }
+
+        .log .p0c {
+            color: #ff4081
+        }
+
+        .log .p1c {
+            color: #40c4ff
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+            justify-content: center
+        }
+
+        button {
+            background: transparent;
+            color: var(--cyan);
+            border: 1px solid var(--cyan);
+            padding: 5px 12px;
+            font-family: inherit;
+            font-size: .6rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all .2s
+        }
+
+        button:hover:not(:disabled) {
+            background: rgba(0, 229, 255, .15);
+            box-shadow: 0 0 10px rgba(0, 229, 255, .2)
+        }
+
+        button:disabled {
+            opacity: .3;
+            cursor: not-allowed
+        }
+
+        .dashboard {
+            display: flex;
+            gap: 10px;
+            width: min(95vw, 750px);
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center
+        }
+
+        .player-panel {
+            flex: 1;
+            min-width: 280px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 4px
+        }
+
+        .player-panel h3 {
+            font-size: .8rem;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .player-panel .p-icon {
+            width: 20px;
+            height: 20px
+        }
+
+        .stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 6px 0;
+            font-size: .6rem
+        }
+
+        .stat {
+            background: rgba(0, 229, 255, .05);
+            padding: 4px 8px;
+            border: 1px solid var(--border);
+            border-radius: 3px
+        }
+
+        .stat b {
+            color: var(--gold)
+        }
+
+        .inv {
+            display: flex;
+            gap: 8px;
+            margin: 4px 0
+        }
+
+        .inv .card {
+            padding: 4px 10px;
+            border: 1px solid;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: .65rem;
+            transition: all .3s
+        }
+
+        .inv .card.M {
+            border-color: #e91e63;
+            color: #e91e63;
+            background: rgba(233, 30, 99, .1)
+        }
+
+        .inv .card.L {
+            border-color: #2196f3;
+            color: #2196f3;
+            background: rgba(33, 150, 243, .1)
+        }
+
+        .inv .card.T {
+            border-color: #4caf50;
+            color: #4caf50;
+            background: rgba(76, 175, 80, .1)
+        }
+
+        .card-gain {
+            animation: cardPop .5s ease-out
+        }
+
+        @keyframes cardPop {
+            0% {
+                transform: scale(1.5);
+                opacity: 0
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1
+            }
+        }
+
+        .props-list {
+            font-size: .5rem;
+            max-height: 80px;
+            overflow-y: auto;
+            margin-top: 4px
+        }
+
+        .props-list div {
+            padding: 1px 0
+        }
+
+        .active-panel {
+            border-color: var(--cyan);
+            box-shadow: 0 0 12px rgba(0, 229, 255, .2)
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .7);
+            z-index: 100;
+            align-items: center;
+            justify-content: center
+        }
+
+        .modal-overlay.show {
+            display: flex
+        }
+
+        .modal-box {
+            background: var(--panel);
+            border: 2px solid var(--cyan);
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 420px;
+            width: 92%;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 229, 255, .3);
+            max-height: 90vh;
+            overflow-y: auto
+        }
+
+        .modal-box h3 {
+            color: var(--cyan);
+            margin-bottom: 10px;
+            font-size: .85rem
+        }
+
+        .modal-box p {
+            font-size: .6rem;
+            margin: 6px 0
+        }
+
+        .modal-box .btns {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 12px;
+            flex-wrap: wrap
+        }
+
+        /* Lab Bench */
+        .lab-recipe {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 10px 0;
+            flex-wrap: wrap
+        }
+
+        .lab-item {
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: .6rem;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        .lab-item.has {
+            border-color: #4caf50;
+            color: #4caf50
+        }
+
+        .lab-item.miss {
+            border-color: #ef5350;
+            color: #ef5350
+        }
+
+        .lab-item .chk {
+            font-size: .7rem
+        }
+
+        /* Market Modal */
+        .market-grid {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 10px 0;
+            flex-wrap: wrap
+        }
+
+        .market-btn {
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all .2s;
+            background: rgba(0, 229, 255, .05);
+            min-width: 60px
+        }
+
+        .market-btn:hover {
+            border-color: var(--cyan)
+        }
+
+        .market-btn.sel {
+            border-color: var(--gold);
+            background: rgba(255, 215, 0, .1)
+        }
+
+        .market-btn.disabled {
+            opacity: .3;
+            pointer-events: none
+        }
+
+        .market-label {
+            font-size: .5rem;
+            color: var(--text);
+            margin-top: 4px
+        }
+
+        /* Tooltip */
+        .tooltip {
+            display: none;
+            position: absolute;
+            background: #111827;
+            border: 1px solid var(--cyan);
+            border-radius: 6px;
+            padding: 8px 10px;
+            z-index: 50;
+            min-width: 180px;
+            pointer-events: none;
+            font-size: .55rem;
+            text-align: left;
+            box-shadow: 0 0 15px rgba(0, 229, 255, .2)
+        }
+
+        .tooltip .tt-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 2px 0
+        }
+
+        .tooltip .tt-chk {
+            font-size: .65rem
+        }
+
+        .tile:hover .tooltip {
+            display: block
+        }
+
+        /* Game Over */
+        .gameover-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .85);
+            z-index: 200;
+            align-items: center;
+            justify-content: center
+        }
+
+        .gameover-overlay.show {
+            display: flex
+        }
+
+        .gameover-box {
+            background: var(--panel);
+            border: 3px solid var(--gold);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 0 60px rgba(255, 215, 0, .3)
+        }
+
+        .gameover-box h2 {
+            color: var(--gold);
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, .5)
+        }
+
+        .gameover-box p {
+            font-size: .7rem;
+            margin: 8px 0
+        }
+
+        /* Quiz */
+        .quiz-tier {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: .5rem;
+            font-weight: bold;
+            margin-bottom: 6px
+        }
+
+        .tier-green {
+            background: #1b5e20;
+            color: #66bb6a
+        }
+
+        .tier-yellow {
+            background: #e65100;
+            color: #ffb74d
+        }
+
+        .tier-red {
+            background: #b71c1c;
+            color: #ef5350
+        }
+
+        .quiz-opts {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin: 10px 0
+        }
+
+        .quiz-opt {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: .6rem;
+            text-align: left;
+            transition: all .2s;
+            background: rgba(0, 229, 255, .03)
+        }
+
+        .quiz-opt:hover {
+            border-color: var(--cyan);
+            background: rgba(0, 229, 255, .1)
+        }
+
+        .quiz-opt.correct {
+            border-color: #4caf50;
+            background: rgba(76, 175, 80, .2);
+            color: #4caf50
+        }
+
+        .quiz-opt.wrong {
+            border-color: #ef5350;
+            background: rgba(239, 83, 80, .2);
+            color: #ef5350
+        }
+
+        .quiz-result {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: .6rem;
+            font-weight: bold
+        }
+
+        .quiz-timer {
+            font-size: 1.2rem;
+            color: var(--gold);
+            font-weight: bold;
+            margin: 8px 0
+        }
+
+        .action-card {
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(255, 215, 0, .05)
+        }
+
+        .action-card h4 {
+            color: var(--gold);
+            font-size: .7rem;
+            margin-bottom: 4px
+        }
+
+        /* ── AI ASSISTANT ── */
+        .ai-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0a0e1a, #1a2744);
+            border: 2px solid var(--cyan);
+            color: var(--cyan);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 229, 255, .3), 0 4px 15px rgba(0, 0, 0, .4);
+            transition: all .3s;
+            animation: ai-pulse 2s infinite
+        }
+
+        .ai-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0, 229, 255, .5), 0 4px 20px rgba(0, 0, 0, .5)
+        }
+
+        @keyframes ai-pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(0, 229, 255, .3)
+            }
+
+            50% {
+                box-shadow: 0 0 30px rgba(0, 229, 255, .5), 0 0 60px rgba(0, 229, 255, .15)
+            }
+        }
+
+        .ai-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 360px;
+            max-height: 480px;
+            background: rgba(10, 14, 26, .95);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--cyan);
+            border-radius: 12px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(0, 229, 255, .15), 0 8px 32px rgba(0, 0, 0, .6);
+            transform: translateY(20px) scale(.95);
+            opacity: 0;
+            pointer-events: none;
+            transition: all .3s ease
+        }
+
+        .ai-panel.open {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            pointer-events: all
+        }
+
+        .ai-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 229, 255, .05)
+        }
+
+        .ai-header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            font-size: .75rem;
+            color: var(--cyan);
+            letter-spacing: 1px
+        }
+
+        .ai-header-title span {
+            font-size: 1.1rem
+        }
+
+        .ai-close {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: .7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s
+        }
+
+        .ai-close:hover {
+            border-color: #ef5350;
+            color: #ef5350;
+            background: rgba(239, 83, 80, .1)
+        }
+
+        .ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 250px;
+            max-height: 340px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent
+        }
+
+        .ai-msg {
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: .65rem;
+            line-height: 1.5;
+            animation: ai-msg-in .3s ease
+        }
+
+        @keyframes ai-msg-in {
+            from {
+                opacity: 0;
+                transform: translateY(8px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .ai-msg.user {
+            align-self: flex-end;
+            background: rgba(0, 229, 255, .12);
+            border: 1px solid rgba(0, 229, 255, .3);
+            color: var(--cyan);
+            border-bottom-right-radius: 4px
+        }
+
+        .ai-msg.bot {
+            align-self: flex-start;
+            background: rgba(255, 215, 0, .08);
+            border: 1px solid rgba(255, 215, 0, .2);
+            color: #eee;
+            border-bottom-left-radius: 4px
+        }
+
+        .ai-msg.bot strong {
+            color: var(--gold)
+        }
+
+        .ai-input-bar {
+            display: flex;
+            gap: 6px;
+            padding: 10px 12px;
+            border-top: 1px solid var(--border);
+            background: rgba(0, 229, 255, .03)
+        }
+
+        .ai-input-bar input {
+            flex: 1;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--text);
+            font-size: .65rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color .2s
+        }
+
+        .ai-input-bar input:focus {
+            border-color: var(--cyan)
+        }
+
+        .ai-input-bar input::placeholder {
+            color: rgba(255, 255, 255, .3)
+        }
+
+        .ai-send {
+            background: linear-gradient(135deg, rgba(0, 229, 255, .15), rgba(0, 229, 255, .25));
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            border-radius: 8px;
+            width: 38px;
+            cursor: pointer;
+            font-size: .85rem;
+            transition: all .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .ai-send:hover {
+            background: rgba(0, 229, 255, .3);
+            box-shadow: 0 0 12px rgba(0, 229, 255, .3)
+        }
+
+        .ai-typing {
+            align-self: flex-start;
+            padding: 8px 14px;
+            font-size: .6rem;
+            color: rgba(255, 215, 0, .6);
+            font-style: italic
+        }
+
+        .ai-typing span {
+            animation: ai-dot 1.4s infinite;
+            display: inline-block
+        }
+
+        .ai-typing span:nth-child(2) {
+            animation-delay: .2s
+        }
+
+        .ai-typing span:nth-child(3) {
+            animation-delay: .4s
+        }
+
+        @keyframes ai-dot {
+
+            0%,
+            60%,
+            100% {
+                opacity: .3
+            }
+
+            30% {
+                opacity: 1
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>⚛ Multipoly: The Dimensional Trade ⚛</h1>
+    <div class="board-container" id="board"></div>
+    <div class="dashboard" id="dashboard"></div>
+    <div class="modal-overlay" id="modal">
+        <div class="modal-box" id="modalContent"></div>
+    </div>
+    <div class="modal-overlay" id="labModal">
+        <div class="modal-box" id="labContent"></div>
+    </div>
+    <div class="modal-overlay" id="marketModal">
+        <div class="modal-box" id="marketContent"></div>
+    </div>
+    <div class="gameover-overlay" id="gameoverOverlay">
+        <div class="gameover-box" id="gameoverBox"></div>
+    </div>
+    <div class="modal-overlay" id="quizModal">
+        <div class="modal-box" id="quizContent"></div>
+    </div>
+
+    <!-- AI ASSISTANT -->
+    <button class="ai-toggle" id="aiToggle" title="Ask Physics AI">🤖</button>
+    <div class="ai-panel" id="aiPanel">
+        <div class="ai-header">
+            <div class="ai-header-title"><span>🤖</span> PHYSICS AI ASSISTANT</div>
+            <button class="ai-close" id="aiClose" title="Close">✕</button>
+        </div>
+        <div class="ai-messages" id="aiMessages">
+            <div class="ai-msg bot">👋 Hello! I'm your <strong>Physics AI Assistant</strong>. Ask me anything about
+                <strong>dimensional analysis</strong>, <strong>physics formulas</strong>, or <strong>how to play
+                    Multipoly</strong>!
+            </div>
+        </div>
+        <div class="ai-input-bar">
+            <input type="text" id="aiInput" placeholder="Ask a physics question..." autocomplete="off">
+            <button class="ai-send" id="aiSend" title="Send">➤</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+        // ── SVG TOKENS ──
+        const SVG_ATOM = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="8" fill="#ff4081"/><ellipse cx="50" cy="50" rx="35" ry="12" fill="none" stroke="#ff4081" stroke-width="2"/><ellipse cx="50" cy="50" rx="35" ry="12" fill="none" stroke="#ff4081" stroke-width="2" transform="rotate(60 50 50)"/><ellipse cx="50" cy="50" rx="35" ry="12" fill="none" stroke="#ff4081" stroke-width="2" transform="rotate(120 50 50)"/><circle cx="85" cy="50" r="3" fill="#ff80ab"/><circle cx="32" cy="28" r="3" fill="#ff80ab"/><circle cx="32" cy="72" r="3" fill="#ff80ab"/></svg>`;
+        const SVG_ROCKET = `<svg viewBox="0 0 100 100"><path d="M50 10 C50 10 70 30 70 60 L60 75 L55 65 L50 80 L45 65 L40 75 L30 60 C30 30 50 10 50 10Z" fill="#40c4ff" stroke="#80d8ff" stroke-width="1.5"/><circle cx="50" cy="42" r="6" fill="#0a0e1a"/><path d="M30 60 L22 65 L28 55Z" fill="#0288d1"/><path d="M70 60 L78 65 L72 55Z" fill="#0288d1"/><path d="M42 75 L50 95 L58 75" fill="#ff6d00" opacity=".8"/><path d="M45 75 L50 88 L55 75" fill="#ffd600" opacity=".9"/></svg>`;
+        const PLAYER_SVGS = [SVG_ATOM, SVG_ROCKET];
+
+        // ── BOARD DATA ──
+        const GROUPS = { brown: '#8B4513', ltblue: '#4fc3f7', pink: '#f06292', orange: '#ff9800', red: '#ef5350', green: '#66bb6a' };
+        const TILES = [
+            { id: 0, name: 'The Big Bang', type: 'go' },
+            { id: 1, name: 'Length', formula: 'L', cost: 50, group: 'brown', rent: 10, res: { M: 0, L: 1, T: 0 }, houseCost: 30 },
+            { id: 2, name: 'Peer Review', type: 'chest' },
+            { id: 3, name: 'Time', formula: 'T', cost: 60, group: 'brown', rent: 12, res: { M: 0, L: 0, T: 1 }, houseCost: 30 },
+            { id: 4, name: 'Income Tax', type: 'tax', amount: 100 },
+            { id: 5, name: 'Station α', type: 'station' },
+            { id: 6, name: 'Area', formula: 'L²', cost: 100, group: 'ltblue', rent: 20, res: { M: 0, L: 2, T: 0 }, houseCost: 50 },
+            { id: 7, name: 'Experimental Results', type: 'chance' },
+            { id: 8, name: 'Volume', formula: 'L³', cost: 100, group: 'ltblue', rent: 20, res: { M: 0, L: 3, T: 0 }, houseCost: 50 },
+            { id: 9, name: 'Mass', formula: 'M', cost: 120, group: 'ltblue', rent: 24, res: { M: 1, L: 0, T: 0 }, houseCost: 50 },
+            { id: 10, name: 'Black Hole', type: 'jail' },
+            { id: 11, name: 'Velocity', formula: 'LT⁻¹', cost: 140, group: 'pink', rent: 28, res: { M: 0, L: 1, T: 1 }, houseCost: 70 },
+            { id: 12, name: 'Dimension Power', type: 'utility' },
+            { id: 13, name: 'Acceleration', formula: 'LT⁻²', cost: 140, group: 'pink', rent: 28, res: { M: 0, L: 1, T: 2 }, houseCost: 70 },
+            { id: 14, name: 'Frequency', formula: 'T⁻¹', cost: 160, group: 'pink', rent: 32, res: { M: 0, L: 0, T: 1 }, houseCost: 70 },
+            { id: 15, name: 'Station β', type: 'station' },
+            { id: 16, name: 'Momentum', formula: 'MLT⁻¹', cost: 180, group: 'orange', rent: 36, res: { M: 1, L: 1, T: 1 }, houseCost: 90 },
+            { id: 17, name: 'Peer Review', type: 'chest' },
+            { id: 18, name: 'Force', formula: 'MLT⁻²', cost: 180, group: 'orange', rent: 36, res: { M: 1, L: 1, T: 2 }, houseCost: 90 },
+            { id: 19, name: 'Density', formula: 'ML⁻³', cost: 200, group: 'orange', rent: 40, res: { M: 1, L: 3, T: 0 }, houseCost: 90 },
+            { id: 20, name: 'Frictionless Vacuum', type: 'free' },
+            { id: 21, name: 'Work', formula: 'ML²T⁻²', cost: 220, group: 'red', rent: 44, res: { M: 1, L: 2, T: 2 }, houseCost: 110 },
+            { id: 22, name: 'Experimental Results', type: 'chance' },
+            { id: 23, name: 'Power', formula: 'ML²T⁻³', cost: 240, group: 'red', rent: 48, res: { M: 1, L: 2, T: 3 }, houseCost: 110 },
+            { id: 24, name: 'Pressure', formula: 'ML⁻¹T⁻²', cost: 260, group: 'red', rent: 52, res: { M: 1, L: 1, T: 2 }, houseCost: 110 },
+            { id: 25, name: 'Station γ', type: 'station' },
+            { id: 26, name: 'Surface Tension', formula: 'MT⁻²', cost: 300, group: 'green', rent: 60, res: { M: 1, L: 0, T: 2 }, houseCost: 150 },
+            { id: 27, name: 'Peer Review', type: 'chest' },
+            { id: 28, name: 'Torque', formula: 'ML²T⁻²', cost: 320, group: 'green', rent: 64, res: { M: 1, L: 2, T: 2 }, houseCost: 150 },
+            { id: 29, name: 'Luxury Tax', type: 'tax', amount: 150 },
+            { id: 30, name: 'Go To Jail', type: 'gotojail' },
+            { id: 31, name: 'Viscosity', formula: 'ML⁻¹T⁻¹', cost: 180, group: 'orange', rent: 36, res: { M: 1, L: 1, T: 1 }, houseCost: 90 },
+            { id: 32, name: 'Experimental Results', type: 'chance' },
+            { id: 33, name: 'Impulse', formula: 'MLT⁻¹', cost: 200, group: 'orange', rent: 40, res: { M: 1, L: 1, T: 1 }, houseCost: 90 },
+            { id: 34, name: 'Station δ', type: 'station' },
+            { id: 35, name: 'Peer Review', type: 'chest' },
+            { id: 36, name: 'Entropy', formula: 'ML²T⁻²K⁻¹', cost: 280, group: 'green', rent: 56, res: { M: 1, L: 2, T: 2 }, houseCost: 150 },
+            { id: 37, name: 'Experimental Results', type: 'chance' },
+            { id: 38, name: 'Super Tax', type: 'tax', amount: 200 },
+            { id: 39, name: 'Dark Energy', formula: 'ML²T⁻²', cost: 350, group: 'green', rent: 70, res: { M: 1, L: 2, T: 2 }, houseCost: 175 }
+        ];
+
+        // ── CARD DECKS ──
+        const CHANCE_CARDS = [
+            { text: 'Quantum fluctuation! Advance to The Big Bang.', action: p => { moveToTile(p, 0, true) } },
+            { text: 'Wormhole detected! Collect 150g.', action: p => { players[p].gold += 150 } },
+            { text: 'Dark matter collision! Pay 75g.', action: p => { players[p].gold -= 75; checkBankruptcy(p) } },
+            { text: 'Lab grant approved! Gain 2 random resource cards.', action: p => { giveRandomCards(p, 2) } },
+            { text: 'Equipment malfunction! Pay 50g.', action: p => { players[p].gold -= 50; checkBankruptcy(p) } },
+            { text: 'Published a paper! Collect 100g.', action: p => { players[p].gold += 100 } },
+            { text: 'Dimension rift! Go to Black Hole.', action: p => { sendToJail(p) } },
+            { text: 'Eureka moment! Gain 1 of each resource.', action: p => { players[p].inv.M++; players[p].inv.L++; players[p].inv.T++ } },
+            { text: 'Advance to nearest Dimension Station.', action: p => { const stations = [5, 15, 25, 34]; const pp = players[p].pos; let dest = stations.find(s => s > pp); if (!dest) dest = stations[0]; moveToTile(p, dest, dest < pp); giveRandomCards(p, 1); logMsg('🚀 ' + players[p].name + ' gains 1 resource card!', p) } },
+            { text: 'Spacetime anomaly! Move back 3 spaces.', action: p => { players[p].pos = (players[p].pos - 3 + 40) % 40; updateTokens(); handleLanding() } }
+        ];
+        const CHEST_CARDS = [
+            { text: 'Peer review positive! Collect 200g.', action: p => { players[p].gold += 200 } },
+            { text: 'Lab fees due. Pay 100g.', action: p => { players[p].gold -= 100; checkBankruptcy(p) } },
+            { text: 'Research funding! Gain 3 random resource cards.', action: p => { giveRandomCards(p, 3) } },
+            { text: 'Conference travel grant: Collect 50g.', action: p => { players[p].gold += 50 } },
+            { text: 'Citation error! Lose 1 Time card.', action: p => { if (players[p].inv.T > 0) players[p].inv.T--; logMsg(players[p].name + ' lost 1 T card.', p) } },
+            { text: 'Collaborative study! Each opponent gives you 1 resource card.', action: p => { const opp = 1 - p; const types = ['M', 'L', 'T']; const t = types[Math.floor(Math.random() * 3)]; if (players[opp].inv[t] > 0) { players[opp].inv[t]--; players[p].inv[t]++; logMsg(players[opp].name + ' gave 1 ' + t + ' to ' + players[p].name, p) } else { logMsg(players[opp].name + ' has no ' + t + ' to give.', p) } } },
+            { text: 'Thesis rejected. Pay 60g.', action: p => { players[p].gold -= 60; checkBankruptcy(p) } },
+            { text: 'Nobel nomination buzz! Collect 250g.', action: p => { players[p].gold += 250 } },
+            { text: 'Lab accident! Lose 1 Mass card.', action: p => { if (players[p].inv.M > 0) players[p].inv.M--; logMsg(players[p].name + ' lost 1 M card.', p) } },
+            { text: 'Symmetry breakthrough! Gain 2 Length cards.', action: p => { players[p].inv.L += 2 } }
+        ];
+
+        // ── PLAYER STATE ──
+        let players = [
+            { name: 'Player 1', gold: 1500, pos: 0, inv: { M: 0, L: 0, T: 0 }, props: [], inJail: false, jailTurns: 0 },
+            { name: 'Player 2', gold: 1500, pos: 0, inv: { M: 0, L: 0, T: 0 }, props: [], inJail: false, jailTurns: 0 }
+        ];
+        let current = 0, turnPhase = 'roll', gameOver = false;
+        let lastDice = [0, 0];
+        let marketGive = '', marketGet = '';
+
+        // ── GRID LAYOUT ──
+        function getTileGridPos(id) {
+            if (id >= 0 && id <= 10) return { row: 10, col: 10 - id };
+            if (id >= 11 && id <= 20) return { row: 20 - id, col: 0 };
+            if (id >= 21 && id <= 30) return { row: 0, col: id - 20 };
+            if (id >= 31 && id <= 39) return { row: id - 30, col: 10 };
+            return { row: 0, col: 0 };
+        }
+        function getSide(id) {
+            if (id >= 0 && id <= 10) return 'bottom';
+            if (id >= 11 && id <= 20) return 'left';
+            if (id >= 21 && id <= 30) return 'top';
+            return 'right';
+        }
+        function getTileIcon(t) {
+            if (t.type === 'go') return '💥'; if (t.type === 'jail') return '🕳️'; if (t.type === 'free') return '🌀';
+            if (t.type === 'gotojail') return '⚠️'; if (t.type === 'station') return '🚀'; if (t.type === 'chance') return '🔬';
+            if (t.type === 'chest') return '📄'; if (t.type === 'tax') return '💰'; if (t.type === 'utility') return '⚡'; return '';
+        }
+
+        // ── TOOLTIP BUILDER ──
+        function buildTooltip(tile) {
+            if (!tile.group) return '';
+            const p = players[current];
+            let html = '<div class="tooltip">';
+            html += `<div style="color:var(--gold);font-weight:bold;margin-bottom:3px">${tile.name}</div>`;
+            html += `<div>Cost: <span style="color:var(--gold)">${tile.cost}g</span></div>`;
+            if (tile.formula) html += `<div>Formula: <span style="color:var(--cyan)">${tile.formula}</span></div>`;
+            if (tile.res) {
+                html += '<div style="margin-top:3px;font-weight:bold">Build needs:</div>';
+                ['M', 'L', 'T'].forEach(r => {
+                    if (tile.res[r] > 0) {
+                        const has = p.inv[r] >= tile.res[r];
+                        html += `<div class="tt-row"><span class="tt-chk">${has ? '✅' : '❌'}</span>${r}×${tile.res[r]} (you:${p.inv[r]})</div>`;
+                    }
+                });
+                html += `<div class="tt-row">+ ${tile.houseCost || 50}g per house</div>`;
+            }
+            const owner = getOwner(tile.id);
+            if (owner !== null) { html += `<div style="margin-top:3px">Owner: ${players[owner].name}</div>`; }
+            else { html += `<div style="opacity:.6;margin-top:3px">Unowned</div>`; }
+            html += '</div>';
+            return html;
+        }
+
+        // ── RENDER BOARD ──
+        function renderBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            const center = document.createElement('div');
+            center.className = 'center'; center.id = 'center';
+            center.style.gridColumn = '2/11'; center.style.gridRow = '2/11';
+            center.innerHTML = `<h2>⚛ CONTROL ⚛</h2>
+  <div class="dice-area"><div class="die" id="d1">?</div><div class="die" id="d2">?</div></div>
+  <div class="controls">
+   <button id="btnRoll" onclick="rollDice()">🎲 Roll Dice</button>
+   <button id="btnBuy" onclick="buyProperty()" disabled>💰 Buy License</button>
+   <button id="btnLab" onclick="openLabBench()" disabled>⚗ Lab Bench</button>
+   <button id="btnMarket" onclick="openMarket()">🔄 Market</button>
+   <button id="btnJail" onclick="payJail()" style="display:none">🕳️ Pay 50g (Escape)</button>
+   <button id="btnEnd" onclick="endTurn()" disabled>⏭ End Turn</button>
+  </div>
+  <div class="log" id="log"></div>`;
+            board.appendChild(center);
+            TILES.forEach(tile => {
+                const gp = getTileGridPos(tile.id);
+                const div = document.createElement('div');
+                div.className = 'tile ' + getSide(tile.id);
+                div.id = 'tile-' + tile.id;
+                div.style.gridRow = String(gp.row + 1);
+                div.style.gridColumn = String(gp.col + 1);
+                div.onclick = () => showTileInfo(tile.id);
+                let inner = '';
+                if (tile.group) inner += `<div class="color-bar" style="background:${GROUPS[tile.group]}"></div>`;
+                inner += `<div class="t-name">${getTileIcon(tile)}${tile.name}</div>`;
+                if (tile.cost) inner += `<div class="t-cost">${tile.cost}g</div>`;
+                if (tile.formula) inner += `<div class="t-formula">${tile.formula}</div>`;
+                inner += `<div class="players" id="players-${tile.id}"></div>`;
+                inner += `<div class="house-count" id="houses-${tile.id}"></div>`;
+                inner += buildTooltip(tile);
+                div.innerHTML = inner;
+                board.appendChild(div);
+            });
+            updateTokens();
+        }
+
+        function refreshTooltips() {
+            TILES.forEach(tile => {
+                if (!tile.group) return;
+                const el = document.getElementById('tile-' + tile.id);
+                if (!el) return;
+                const old = el.querySelector('.tooltip');
+                if (old) old.remove();
+                el.insertAdjacentHTML('beforeend', buildTooltip(tile));
+            });
+        }
+
+        function updateTokens() {
+            TILES.forEach(t => {
+                const el = document.getElementById('players-' + t.id); if (!el) return;
+                el.innerHTML = '';
+                players.forEach((p, i) => {
+                    if (p.pos === t.id) {
+                        const tk = document.createElement('div');
+                        tk.className = 'player-token';
+                        tk.innerHTML = PLAYER_SVGS[i];
+                        el.appendChild(tk);
+                    }
+                });
+                const hEl = document.getElementById('houses-' + t.id);
+                if (hEl) {
+                    const owned = getOwner(t.id);
+                    if (owned !== null && t.group) {
+                        const houses = players[owned].props.find(pp => pp.id === t.id)?.houses || 0;
+                        hEl.textContent = houses > 0 ? '🏠'.repeat(Math.min(houses, 4)) + (houses >= 5 ? '🏛️' : '') : '';
+                    } else hEl.textContent = '';
+                }
+            });
+        }
+
+        function renderDashboard() {
+            const dash = document.getElementById('dashboard'); dash.innerHTML = '';
+            players.forEach((p, i) => {
+                const panel = document.createElement('div');
+                panel.className = `player-panel ${i === current ? 'active-panel' : ''}`;
+                const propsList = p.props.map(pp => {
+                    const t = TILES[pp.id];
+                    return `<div style="color:${GROUPS[t.group] || '#fff'}">${t.name} ${pp.houses > 0 ? (pp.houses >= 5 ? '🏛️' : '🏠×' + pp.houses) : ''}</div>`;
+                }).join('');
+                panel.innerHTML = `
+   <h3><span class="p-icon">${PLAYER_SVGS[i]}</span>${p.name} ${p.inJail ? '[IN BLACK HOLE]' : ''}</h3>
+   <div class="stats"><div class="stat">Gold: <b>${p.gold}g</b></div></div>
+   <div class="inv">
+    <div class="card M" id="cardM${i}">M:${p.inv.M}</div>
+    <div class="card L" id="cardL${i}">L:${p.inv.L}</div>
+    <div class="card T" id="cardT${i}">T:${p.inv.T}</div>
+   </div>
+   <div class="props-list">${propsList || '<div style="opacity:.5">No properties</div>'}</div>`;
+                dash.appendChild(panel);
+            });
+        }
+
+        // ── GAME LOGIC ──
+        function logMsg(msg, pIdx) {
+            const el = document.getElementById('log'); if (!el) return;
+            const div = document.createElement('div');
+            div.className = pIdx !== undefined ? `p${pIdx}c` : '';
+            div.textContent = msg; el.prepend(div);
+        }
+
+        function rollDice() {
+            if (turnPhase !== 'roll' || gameOver) return;
+            const p = players[current];
+            lastDice = [Math.ceil(Math.random() * 6), Math.ceil(Math.random() * 6)];
+            const total = lastDice[0] + lastDice[1];
+            document.getElementById('d1').textContent = lastDice[0];
+            document.getElementById('d2').textContent = lastDice[1];
+            document.getElementById('d1').classList.add('rolling');
+            document.getElementById('d2').classList.add('rolling');
+            setTimeout(() => { document.getElementById('d1').classList.remove('rolling'); document.getElementById('d2').classList.remove('rolling') }, 400);
+            logMsg(`${p.name} rolled ${lastDice[0]}+${lastDice[1]}=${total}`, current);
+
+            if (p.inJail) {
+                if (lastDice[0] === lastDice[1]) { p.inJail = false; p.jailTurns = 0; logMsg(`${p.name} rolled doubles! Escaped Black Hole!`, current); }
+                else {
+                    p.jailTurns++;
+                    if (p.jailTurns >= 3) { p.inJail = false; p.jailTurns = 0; p.gold -= 50; logMsg(`${p.name} paid 50g to escape Black Hole.`, current); checkBankruptcy(current); }
+                    else { logMsg(`${p.name} stuck in Black Hole. (Turn ${p.jailTurns}/3)`, current); turnPhase = 'done'; updateButtons(); renderDashboard(); return; }
+                }
+            }
+            const oldPos = p.pos;
+            p.pos = (p.pos + total) % 40;
+            if (p.pos < oldPos) { p.gold += 200; giveRandomCards(current, 2); logMsg(`${p.name} passed The Big Bang! +200g +2 cards`, current); }
+            updateTokens(); turnPhase = 'action';
+            handleLanding(); updateButtons(); renderDashboard(); refreshTooltips();
+        }
+
+        function moveToTile(pIdx, tileId, collectGo) {
+            const p = players[pIdx];
+            if (collectGo && tileId <= p.pos) { p.gold += 200; giveRandomCards(pIdx, 2); logMsg(`${p.name} passed The Big Bang! +200g +2 cards`, pIdx); }
+            p.pos = tileId; updateTokens();
+        }
+
+        function handleLanding() {
+            const p = players[current]; const tile = TILES[p.pos];
+            logMsg(`${p.name} landed on ${tile.name}`, current);
+            if (tile.type === 'tax') { p.gold -= tile.amount; logMsg(`${p.name} pays ${tile.amount}g tax.`, current); checkBankruptcy(current); }
+            else if (tile.type === 'gotojail') { sendToJail(current); }
+            else if (tile.type === 'chance') { const card = CHANCE_CARDS[Math.floor(Math.random() * CHANCE_CARDS.length)]; logMsg(`🔬 ${card.text}`, current); card.action(current); }
+            else if (tile.type === 'chest') { const card = CHEST_CARDS[Math.floor(Math.random() * CHEST_CARDS.length)]; logMsg(`📄 ${card.text}`, current); card.action(current); }
+            else if (tile.type === 'station') { giveRandomCards(current, 1); logMsg(`🚀 ${p.name} gains 1 resource card!`, current); }
+            else if (tile.group) {
+                const owner = getOwner(tile.id);
+                if (owner !== null && owner !== current) { const rent = calcRent(tile, owner); p.gold -= rent; players[owner].gold += rent; logMsg(`${p.name} pays ${rent}g rent to ${players[owner].name}`, current); checkBankruptcy(current); }
+            }
+            renderDashboard(); updateTokens();
+        }
+
+        function sendToJail(pIdx) { players[pIdx].pos = 10; players[pIdx].inJail = true; players[pIdx].jailTurns = 0; logMsg(`${players[pIdx].name} sent to Black Hole!`, pIdx); updateTokens(); }
+        function getOwner(tileId) { for (let i = 0; i < players.length; i++) { if (players[i].props.find(pp => pp.id === tileId)) return i; } return null; }
+        function ownsGroup(pIdx, group) { return TILES.filter(t => t.group === group).every(t => getOwner(t.id) === pIdx); }
+        function calcRent(tile, ownerIdx) {
+            const prop = players[ownerIdx].props.find(pp => pp.id === tile.id);
+            let r = tile.rent; if (prop && prop.houses > 0) r = tile.rent * (1 + prop.houses);
+            if (ownsGroup(ownerIdx, tile.group)) r *= 2; return r;
+        }
+
+        function buyProperty() {
+            const p = players[current]; const tile = TILES[p.pos];
+            if (!tile.group || getOwner(tile.id) !== null || p.gold < tile.cost) return;
+            p.gold -= tile.cost; p.props.push({ id: tile.id, houses: 0 });
+            logMsg(`${p.name} bought ${tile.name} for ${tile.cost}g!`, current);
+            renderDashboard(); updateTokens(); updateButtons(); refreshTooltips();
+        }
+
+        function canDerive(pIdx, tileId) {
+            const p = players[pIdx]; const tile = TILES[tileId || p.pos];
+            if (!tile.group) return false;
+            const prop = p.props.find(pp => pp.id === tile.id);
+            if (!prop || prop.houses >= 5) return false;
+            if (p.gold < (tile.houseCost || 50)) return false;
+            if (!tile.res) return false;
+            return p.inv.M >= tile.res.M && p.inv.L >= tile.res.L && p.inv.T >= tile.res.T;
+        }
+
+        function deriveHouseOn(tileId) {
+            const p = players[current]; const tile = TILES[tileId];
+            if (!canDerive(current, tileId)) return;
+            const prop = p.props.find(pp => pp.id === tileId);
+            p.gold -= (tile.houseCost || 50);
+            p.inv.M -= tile.res.M; p.inv.L -= tile.res.L; p.inv.T -= tile.res.T;
+            prop.houses++;
+            logMsg(`⚗ ${p.name} derived on ${tile.name}! (${tile.res.M}M+${tile.res.L}L+${tile.res.T}T burned)`, current);
+            // Check Grand Unified Theory win
+            if (tile.id === 39 && prop.houses >= 5) { triggerGUT(current); return; }
+            renderDashboard(); updateTokens(); updateButtons(); refreshTooltips();
+            closeModal('labModal'); openLabBench();
+        }
+
+        // ── LAB BENCH MODAL ──
+        function openLabBench() {
+            const p = players[current];
+            // Find properties the current player owns
+            if (p.props.length === 0) { logMsg('You own no properties to derive on.', current); return; }
+            let html = '<h3>⚗ Lab Bench — Derivation</h3>';
+            html += '<p style="opacity:.7">Select a property to build on:</p>';
+            p.props.forEach(pp => {
+                const tile = TILES[pp.id];
+                const can = canDerive(current, pp.id);
+                html += `<div style="border:1px solid var(--border);border-radius:6px;padding:8px;margin:6px 0;text-align:left${can ? ';border-color:var(--cyan)' : ''}">`;
+                html += `<div style="color:${GROUPS[tile.group]};font-weight:bold">${tile.name} <span style="color:var(--cyan)">${tile.formula}</span> — Houses: ${pp.houses}/5</div>`;
+                if (tile.res) {
+                    html += '<div class="lab-recipe">';
+                    ['M', 'L', 'T'].forEach(r => {
+                        if (tile.res[r] > 0) {
+                            const has = p.inv[r] >= tile.res[r];
+                            html += `<div class="lab-item ${has ? 'has' : 'miss'}"><span class="chk">${has ? '✅' : '❌'}</span>${r}×${tile.res[r]} (you:${p.inv[r]})</div>`;
+                        }
+                    });
+                    html += `<div class="lab-item" style="color:var(--gold)">+${tile.houseCost || 50}g</div>`;
+                    html += '</div>';
+                }
+                if (pp.houses < 5) { html += `<button ${can ? '' : 'disabled'} onclick="deriveHouseOn(${pp.id})" style="margin-top:4px">${can ? '⚗ Derive!' : 'Missing resources'}</button>`; }
+                else { html += `<div style="color:var(--gold);font-size:.55rem">🏛️ The Institute (MAX)</div>`; }
+                html += '</div>';
+            });
+            html += `<div class="btns"><button onclick="closeModal('labModal')">Close</button></div>`;
+            document.getElementById('labContent').innerHTML = html;
+            document.getElementById('labModal').classList.add('show');
+        }
+
+        // ── MARKET MODAL (3:1 exchange) ──
+        function openMarket() {
+            marketGive = ''; marketGet = '';
+            renderMarket();
+            document.getElementById('marketModal').classList.add('show');
+        }
+        function renderMarket() {
+            const p = players[current];
+            let html = '<h3>🔄 Dimensional Market</h3>';
+            html += '<p style="opacity:.7">Exchange Rate: Give 3 → Get 1</p>';
+            html += '<div style="margin:8px 0"><b>Give 3 of:</b></div><div class="market-grid">';
+            ['M', 'L', 'T'].forEach(r => {
+                const enough = p.inv[r] >= 3;
+                const sel = marketGive === r;
+                html += `<div class="market-btn ${sel ? 'sel' : ''} ${enough ? '' : 'disabled'}" onclick="marketSelectGive('${r}')">
+   <div style="font-size:1rem;font-weight:bold;color:${r === 'M' ? '#e91e63' : r === 'L' ? '#2196f3' : '#4caf50'}">${r}</div>
+   <div class="market-label">Have: ${p.inv[r]}</div></div>`;
+            });
+            html += '</div><div style="margin:8px 0"><b>Receive 1 of:</b></div><div class="market-grid">';
+            ['M', 'L', 'T'].forEach(r => {
+                const sel = marketGet === r;
+                const disabled = r === marketGive;
+                html += `<div class="market-btn ${sel ? 'sel' : ''} ${disabled ? 'disabled' : ''}" onclick="marketSelectGet('${r}')">
+   <div style="font-size:1rem;font-weight:bold;color:${r === 'M' ? '#e91e63' : r === 'L' ? '#2196f3' : '#4caf50'}">${r}</div>
+   <div class="market-label">Have: ${p.inv[r]}</div></div>`;
+            });
+            html += '</div>';
+            const canTrade = marketGive && marketGet && marketGive !== marketGet && p.inv[marketGive] >= 3;
+            html += `<div class="btns"><button ${canTrade ? '' : 'disabled'} onclick="executeMarketTrade()">Execute Trade</button><button onclick="closeModal('marketModal')">Close</button></div>`;
+            document.getElementById('marketContent').innerHTML = html;
+        }
+        function marketSelectGive(r) { marketGive = r; if (marketGet === r) marketGet = ''; renderMarket(); }
+        function marketSelectGet(r) { marketGet = r; renderMarket(); }
+        function executeMarketTrade() {
+            const p = players[current];
+            if (!marketGive || !marketGet || p.inv[marketGive] < 3) return;
+            p.inv[marketGive] -= 3; p.inv[marketGet] += 1;
+            logMsg(`${p.name} traded 3${marketGive}→1${marketGet} at the Market.`, current);
+            animateCard(current, marketGet);
+            renderDashboard(); refreshTooltips(); renderMarket();
+        }
+
+        function payJail() {
+            const p = players[current]; if (!p.inJail || p.gold < 50) return;
+            p.gold -= 50; p.inJail = false; p.jailTurns = 0;
+            logMsg(`${p.name} paid 50g to escape Black Hole.`, current);
+            renderDashboard(); updateButtons();
+        }
+
+        function giveRandomCards(pIdx, count) {
+            const types = ['M', 'L', 'T'];
+            for (let i = 0; i < count; i++) { const t = types[Math.floor(Math.random() * 3)]; players[pIdx].inv[t]++; animateCard(pIdx, t); }
+        }
+        function animateCard(pIdx, type) {
+            const el = document.getElementById(`card${type}${pIdx}`);
+            if (el) { el.classList.remove('card-gain'); void el.offsetWidth; el.classList.add('card-gain'); }
+        }
+
+        function endTurn() {
+            if (gameOver) return;
+            turnPhase = 'roll'; current = (current + 1) % 2;
+            logMsg(`── ${players[current].name}'s turn ──`, current);
+            updateButtons(); renderDashboard(); refreshTooltips();
+        }
+
+        function updateButtons() {
+            if (gameOver) return;
+            const p = players[current]; const tile = TILES[p.pos];
+            document.getElementById('btnRoll').disabled = turnPhase !== 'roll';
+            document.getElementById('btnBuy').disabled = !(turnPhase === 'action' && tile.group && getOwner(tile.id) === null && p.gold >= tile.cost);
+            document.getElementById('btnLab').disabled = p.props.length === 0;
+            document.getElementById('btnEnd').disabled = turnPhase === 'roll';
+            const jailBtn = document.getElementById('btnJail');
+            jailBtn.style.display = (p.inJail && p.gold >= 50) ? 'inline-block' : 'none';
+        }
+
+        // ── BANKRUPTCY & WIN ──
+        function checkBankruptcy(pIdx) {
+            if (gameOver) return;
+            const p = players[pIdx];
+            if (p.gold < 0) {
+                // Check if they have buildings to sell
+                let totalSellValue = 0;
+                p.props.forEach(pp => {
+                    const t = TILES[pp.id];
+                    totalSellValue += pp.houses * (Math.floor((t.houseCost || 50) / 2));
+                    totalSellValue += Math.floor(t.cost / 2);
+                });
+                if (p.gold + totalSellValue < 0) {
+                    triggerBankruptcy(pIdx);
+                } else {
+                    logMsg(`⚠ ${p.name} is in debt! Sell buildings or properties!`, pIdx);
+                }
+            }
+        }
+
+        function triggerBankruptcy(loser) {
+            gameOver = true;
+            const winner = 1 - loser;
+            document.getElementById('gameoverBox').innerHTML = `
+  <h2>💀 BANKRUPTCY</h2>
+  <p>${players[loser].name} has gone bankrupt!</p>
+  <div style="margin:15px 0">${PLAYER_SVGS[winner]}</div>
+  <h2 style="color:var(--cyan)">${players[winner].name} WINS!</h2>
+  <p style="opacity:.7">The dimensional trade is over.</p>
+  <button onclick="location.reload()" style="margin-top:15px;border-color:var(--gold);color:var(--gold)">🔄 New Game</button>`;
+            document.getElementById('gameoverOverlay').classList.add('show');
+        }
+
+        function triggerGUT(winnerIdx) {
+            gameOver = true;
+            document.getElementById('gameoverBox').innerHTML = `
+  <h2>🌌 GRAND UNIFIED THEORY</h2>
+  <p>${players[winnerIdx].name} built The Institute on Dark Energy!</p>
+  <div style="margin:15px 0">${PLAYER_SVGS[winnerIdx]}</div>
+  <h2 style="color:var(--cyan)">${players[winnerIdx].name} WINS!</h2>
+  <p style="opacity:.7">The universe has been unified!</p>
+  <button onclick="location.reload()" style="margin-top:15px;border-color:var(--gold);color:var(--gold)">🔄 New Game</button>`;
+            document.getElementById('gameoverOverlay').classList.add('show');
+        }
+
+        // ── TILE INFO ──
+        function showTileInfo(id) {
+            const tile = TILES[id]; const owner = getOwner(id);
+            const mc = document.getElementById('modalContent');
+            let html = `<h3>${getTileIcon(tile)} ${tile.name}</h3>`;
+            if (tile.formula) html += `<p>Formula: <span style="color:var(--cyan)">${tile.formula}</span></p>`;
+            if (tile.cost) html += `<p>License Cost: <b style="color:var(--gold)">${tile.cost}g</b></p>`;
+            if (tile.rent) html += `<p>Base Rent: ${tile.rent}g</p>`;
+            if (tile.res) html += `<p>Derivation: ${tile.res.M}M + ${tile.res.L}L + ${tile.res.T}T + ${tile.houseCost || 50}g</p>`;
+            if (tile.group) html += `<p>Group: <span style="color:${GROUPS[tile.group]}">${tile.group}</span></p>`;
+            if (owner !== null) { const prop = players[owner].props.find(pp => pp.id === id); html += `<p>Owner: ${players[owner].name} | Houses: ${prop.houses}</p>`; }
+            else if (tile.group) html += `<p style="opacity:.6">Unowned</p>`;
+            if (tile.type === 'tax') html += `<p>Tax: ${tile.amount}g</p>`;
+            if (tile.type === 'station') html += `<p>Grants 1 random Resource Card</p>`;
+            html += `<div class="btns"><button onclick="closeModal('modal')">Close</button></div>`;
+            mc.innerHTML = html; document.getElementById('modal').classList.add('show');
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        // ── QUIZ SYSTEM ──
+        const QUIZ_L1 = [
+            { q: 'What is the SI unit of Mass?', opts: ['Gram', 'Kilogram', 'Pound', 'Ounce'], ans: 1 },
+            { q: 'Which is a fundamental quantity?', opts: ['Force', 'Velocity', 'Time', 'Energy'], ans: 2 },
+            { q: 'If you have L², what does it represent?', opts: ['Volume', 'Area', 'Length', 'Perimeter'], ans: 1 },
+            { q: 'True or False: Volume is a 2D quantity.', opts: ['True', 'False'], ans: 1 },
+            { q: 'What is the dimension of Velocity?', opts: ['LT⁻²', 'MLT⁻¹', 'LT⁻¹', 'ML⁻¹'], ans: 2 },
+            { q: 'Which is NOT a unit of Length?', opts: ['Angstrom', 'Parsec', 'Candela', 'Light-year'], ans: 2 }
+        ];
+        const QUIZ_L2 = [
+            { q: 'What is the dimension of Acceleration?', opts: ['LT⁻¹', 'LT⁻²', 'MLT⁻²', 'ML⁻¹'], ans: 1 },
+            { q: 'Force = Mass × Acceleration. Its dimension?', opts: ['ML²T⁻²', 'MLT⁻²', 'MLT⁻¹', 'MT⁻²'], ans: 1 },
+            { q: 'ML⁻³ represents which quantity?', opts: ['Pressure', 'Density', 'Force', 'Torque'], ans: 1 },
+            { q: 'Which shares the same dimension as Work?', opts: ['Power', 'Momentum', 'Energy', 'Velocity'], ans: 2 },
+            { q: 'Velocity × Time = ?', opts: ['Acceleration', 'Force', 'Displacement', 'Energy'], ans: 2 },
+            { q: 'Pressure = Force / ?', opts: ['Volume', 'Mass', 'Area', 'Time'], ans: 2 }
+        ];
+        const QUIZ_L3 = [
+            { q: 'What is the dimension of Power?', opts: ['ML²T⁻²', 'ML²T⁻³', 'MLT⁻²', 'MT⁻²'], ans: 1 },
+            { q: 'Gravitational constant G has dimension?', opts: ['M⁻¹L³T⁻²', 'ML²T⁻²', 'M⁻¹L²T⁻¹', 'ML³T⁻²'], ans: 0 },
+            { q: 'Can a dimensionless quantity have units?', opts: ['Yes (e.g. radians)', 'No, never'], ans: 0 },
+            { q: 'F=ma, m=10kg, a=2m/s². Force = ?', opts: ['5 N', '20 N', '10 N', '40 N'], ans: 1 },
+            { q: 'KE = ½mv². Its dimension is?', opts: ['MLT⁻¹', 'ML²T⁻²', 'ML²T⁻³', 'MT⁻²'], ans: 1 },
+            { q: 'Which is heavier: 1kg Gold or 1kg Feathers?', opts: ['Gold', 'Feathers', 'Same mass', 'Depends'], ans: 2 }
+        ];
+        const ACTION_CARDS = [
+            { title: '🔬 The Ruler Challenge', desc: 'Find an object 14-16cm long in 30 seconds!', time: 30, reward: 'Correct: +100g | Wrong: -50g', gold_win: 100, gold_lose: -50 },
+            { title: '⏱ The Stopwatch Challenge', desc: 'Estimate exactly 10 seconds without looking at a clock. Click STOP when you think 10s passed.', time: 15, reward: 'Within 2s: +100g | Off: -30g', gold_win: 100, gold_lose: -30, isTimer: true },
+            { title: '⚖ The Weight Guesser', desc: 'Pick 2 nearby objects. Guess which is heavier. Did you get it right?', time: 30, reward: 'Correct: +50g | Wrong: nothing', gold_win: 50, gold_lose: 0 },
+            { title: '🧩 The 3-Minute Puzzle', desc: 'Unscramble: EOCFR → A physics quantity. Answer: FORCE', time: 45, reward: 'Correct: +150g + 1 resource | Wrong: -50g', gold_win: 150, gold_lose: -50, bonus: true }
+        ];
+        const ALL_QUIZZES = [QUIZ_L1, QUIZ_L2, QUIZ_L3];
+        const TIER_NAMES = ['🟢 Basic', '🟡 Intermediate', '🔴 Advanced'];
+        const TIER_CSS = ['tier-green', 'tier-yellow', 'tier-red'];
+        const TIER_REWARDS = [{ gold: 50, cards: 1 }, { gold: 100, cards: 1 }, { gold: 150, cards: 2 }];
+        const TIER_PENALTY = [25, 50, 75];
+        let quizAnswered = false, actionTimerStart = 0, actionTimerId = null;
+
+        function triggerQuiz() {
+            const tier = Math.floor(Math.random() * 3);
+            const pool = ALL_QUIZZES[tier];
+            const q = pool[Math.floor(Math.random() * pool.length)];
+            quizAnswered = false;
+            let html = `<span class="quiz-tier ${TIER_CSS[tier]}">${TIER_NAMES[tier]}</span>`;
+            html += `<h3>📝 Dimensional Quiz</h3>`;
+            html += `<p style="margin:10px 0;font-size:.65rem">${q.q}</p>`;
+            html += '<div class="quiz-opts">';
+            q.opts.forEach((o, i) => {
+                html += `<div class="quiz-opt" id="qopt${i}" onclick="answerQuiz(${i},${q.ans},${tier})">${String.fromCharCode(65 + i)}) ${o}</div>`;
+            });
+            html += '</div>';
+            html += `<p style="opacity:.5;font-size:.5rem">Correct: +${TIER_REWARDS[tier].gold}g & ${TIER_REWARDS[tier].cards} card(s) | Wrong: -${TIER_PENALTY[tier]}g</p>`;
+            html += `<div id="quizResult"></div>`;
+            html += `<div class="btns" id="quizBtns" style="display:none"><button onclick="closeModal('quizModal')">Continue</button></div>`;
+            document.getElementById('quizContent').innerHTML = html;
+            document.getElementById('quizModal').classList.add('show');
+        }
+
+        function answerQuiz(picked, correct, tier) {
+            if (quizAnswered) return; quizAnswered = true;
+            const p = players[current];
+            document.getElementById('qopt' + correct).classList.add('correct');
+            if (picked === correct) {
+                p.gold += TIER_REWARDS[tier].gold; giveRandomCards(current, TIER_REWARDS[tier].cards);
+                document.getElementById('quizResult').innerHTML = `<div class="quiz-result" style="color:#4caf50">✅ Correct! +${TIER_REWARDS[tier].gold}g +${TIER_REWARDS[tier].cards} card(s)</div>`;
+                logMsg(`📝 ${p.name} answered correctly! +${TIER_REWARDS[tier].gold}g`, current);
+            } else {
+                document.getElementById('qopt' + picked).classList.add('wrong');
+                p.gold -= TIER_PENALTY[tier];
+                document.getElementById('quizResult').innerHTML = `<div class="quiz-result" style="color:#ef5350">❌ Wrong! -${TIER_PENALTY[tier]}g</div>`;
+                logMsg(`📝 ${p.name} answered wrong! -${TIER_PENALTY[tier]}g`, current);
+                checkBankruptcy(current);
+            }
+            document.getElementById('quizBtns').style.display = 'flex';
+            renderDashboard();
+        }
+
+        function triggerAction() {
+            const ac = ACTION_CARDS[Math.floor(Math.random() * ACTION_CARDS.length)];
+            let html = `<div class="action-card"><h4>${ac.title}</h4><p style="font-size:.6rem">${ac.desc}</p><p style="font-size:.5rem;color:var(--gold)">${ac.reward}</p></div>`;
+            if (ac.isTimer) {
+                html += `<div class="quiz-timer" id="actionTimer">0.0s</div>`;
+                html += `<div class="btns"><button onclick="stopActionTimer(${ac.gold_win},${ac.gold_lose})">⏱ STOP!</button></div>`;
+                document.getElementById('quizContent').innerHTML = html;
+                document.getElementById('quizModal').classList.add('show');
+                actionTimerStart = Date.now();
+                actionTimerId = setInterval(() => { const el = document.getElementById('actionTimer'); if (el) el.textContent = ((Date.now() - actionTimerStart) / 1000).toFixed(1) + 's'; }, 100);
+            } else {
+                html += `<p style="font-size:.55rem;margin-top:8px">Did you complete the challenge?</p>`;
+                html += `<div class="btns"><button onclick="actionResult(true,${ac.gold_win},${ac.bonus || false})">✅ Yes!</button><button onclick="actionResult(false,${ac.gold_lose},false)">❌ No</button></div>`;
+                document.getElementById('quizContent').innerHTML = html;
+                document.getElementById('quizModal').classList.add('show');
+            }
+        }
+
+        function stopActionTimer(winG, loseG) {
+            clearInterval(actionTimerId);
+            const elapsed = (Date.now() - actionTimerStart) / 1000;
+            const diff = Math.abs(elapsed - 10);
+            const p = players[current];
+            let html;
+            if (diff <= 2) { p.gold += winG; html = `<div class="quiz-result" style="color:#4caf50">⏱ ${elapsed.toFixed(1)}s — Within 2s! +${winG}g</div>`; logMsg(`⏱ ${p.name} nailed the timer! +${winG}g`, current); }
+            else { p.gold += loseG; html = `<div class="quiz-result" style="color:#ef5350">⏱ ${elapsed.toFixed(1)}s — Off by ${diff.toFixed(1)}s. ${loseG}g</div>`; logMsg(`⏱ ${p.name} missed the timer. ${loseG}g`, current); checkBankruptcy(current); }
+            document.getElementById('quizContent').innerHTML += html + `<div class="btns"><button onclick="closeModal('quizModal')">Continue</button></div>`;
+            renderDashboard();
+        }
+
+        function actionResult(success, gold, bonus) {
+            const p = players[current];
+            p.gold += gold;
+            if (success && bonus) giveRandomCards(current, 1);
+            logMsg(`⚡ ${p.name} ${success ? 'completed' : 'failed'} the challenge! ${gold >= 0 ? '+' : ''}${gold}g`, current);
+            if (!success) checkBankruptcy(current);
+            closeModal('quizModal'); renderDashboard();
+        }
+
+        // Integrate into landing: override chance/chest to sometimes trigger quiz/action
+        const _origHandleLanding = handleLanding;
+        handleLanding = function () {
+            const p = players[current]; const tile = TILES[p.pos];
+            if (tile.type === 'chance' || tile.type === 'chest') {
+                logMsg(`${p.name} landed on ${tile.name}`, current);
+                const roll = Math.random();
+                if (roll < 0.4) { triggerQuiz(); return; }
+                else if (roll < 0.55) { triggerAction(); return; }
+            }
+            _origHandleLanding();
+        };
+
+        // ══════════════════════════════════════════════════
+        // ── AI GAME MASTER — Intent-Based Physics Engine ──
+        // ══════════════════════════════════════════════════
+
+        // ── STOP WORDS ──
+        const STOP = new Set('what is the a an in on of to for do does how why when where which who whom can could would should will shall may might are am was were be been being have has had having i you we they he she it my your our their his her its me us them this that these those and or but not no so if then than at by from with about into through during before after above below up down out off over under again further once here there all each every both few more most other some such only own same too very just also now tell please know explain describe give show need want let make find get go come take see look think say use try ask answer'.split(' '));
+
+        // ── CONVERSATION MEMORY ──
+        const aiMemory = [];
+        function aiRemember(role, text, intent, entity) {
+            aiMemory.push({ role, text, intent: intent || null, entity: entity || null, ts: Date.now() });
+            if (aiMemory.length > 12) aiMemory.shift();
+        }
+        function aiLastContext() {
+            for (let i = aiMemory.length - 1; i >= 0; i--) {
+                if (aiMemory[i].entity) return aiMemory[i];
+            }
+            return null;
+        }
+
+        // ── PHYSICS DERIVATION TREE (Map of MuLTi-Dimensions) ──
+        const DERIV = {
+            'dimensionless': { name: 'Dimensionless Numbers', formula: 'M⁰L⁰T⁰', tier: '0D', si: '—', components: null, socratic: null, desc: 'Pure numbers with no physical dimension (0, 1, 2, π, etc.).' },
+            'length': { name: 'Length', formula: 'L', tier: '1D', si: 'metre (m)', components: null, socratic: null, desc: 'One of the three fundamental dimensions.' },
+            'time': { name: 'Time', formula: 'T', tier: '1D', si: 'second (s)', components: null, socratic: null, desc: 'One of the three fundamental dimensions.' },
+            'mass': { name: 'Mass', formula: 'M', tier: '1D', si: 'kilogram (kg)', components: null, socratic: null, desc: 'One of the three fundamental dimensions.' },
+            'area': { name: 'Area', formula: 'L²', tier: '2D', si: 'm²', components: ['length', 'length'], socratic: 'Area is Length × Length. Both cards are L — so you need 2× L cards! 🃏', desc: 'Two-dimensional extent of a surface.' },
+            'volume': { name: 'Volume', formula: 'L³', tier: '3D', si: 'm³', components: ['length', 'length', 'length'], socratic: 'Volume is Length × Length × Length. That\'s 3× L cards! 📦', desc: 'Three-dimensional extent of a region.' },
+            'frequency': { name: 'Frequency', formula: 'T⁻¹', tier: 'Kinematics', si: 'Hertz (Hz)', components: ['time'], socratic: 'Frequency is 1/Time. You only need 1 T card for this derivation! ⏱️', desc: 'How many cycles per unit time.' },
+            'velocity': { name: 'Velocity', formula: 'LT⁻¹', tier: 'Kinematics', si: 'm/s', components: ['length', 'time'], socratic: 'Velocity is Length / Time. That means you need L and T cards. Think: distance covered per unit time! 🏃', desc: 'Rate of change of displacement.' },
+            'acceleration': { name: 'Acceleration', formula: 'LT⁻²', tier: 'Kinematics', si: 'm/s²', components: ['length', 'time'], socratic: 'Acceleration is Velocity / Time = (L/T) / T = L/T². You need L and T cards for this one! ⚡', desc: 'Rate of change of velocity.' },
+            'momentum': { name: 'Momentum', formula: 'MLT⁻¹', tier: 'Dynamics', si: 'kg·m/s', components: ['mass', 'velocity'], socratic: 'Here\'s the derivation chain: Momentum = Mass × Velocity. You know Mass is <strong>M</strong>. And Velocity? That\'s <strong>L/T</strong>. So Momentum = <strong>M × L/T = MLT⁻¹</strong>. You\'ll need M, L, and T cards! 🎯', desc: 'Mass in motion.' },
+            'force': { name: 'Force', formula: 'MLT⁻²', tier: 'Dynamics', si: 'Newton (N)', components: ['mass', 'acceleration'], socratic: 'Let\'s derive this step by step! 🧪<br>Force = Mass × Acceleration.<br>You know Mass is <strong>M</strong>. Now, do you remember Acceleration? It\'s <strong>L/T²</strong>!<br>So Force = <strong>M × L/T² = MLT⁻²</strong>.<br>Cards needed: M, L, and T!', desc: 'Push or pull — causes acceleration.' },
+            'work': { name: 'Work / Energy', formula: 'ML²T⁻²', tier: 'Advanced', si: 'Joule (J)', components: ['force', 'length'], socratic: 'Time to level up! 🔬<br>Work = Force × Displacement.<br>Force is <strong>MLT⁻²</strong> (Mass × Acceleration).<br>Displacement is <strong>L</strong>.<br>So Work = <strong>MLT⁻² × L = ML²T⁻²</strong>.<br>You need M, L, and T cards to derive this in the Lab Bench!', desc: 'Energy transferred by a force.' },
+            'power': { name: 'Power', formula: 'ML²T⁻³', tier: 'Advanced', si: 'Watt (W)', components: ['work', 'time'], socratic: 'Power = Work / Time. 💡<br>Work is <strong>ML²T⁻²</strong>.<br>Dividing by Time (T) gives: <strong>ML²T⁻³</strong>.<br>This is like doing a Work derivation and then dividing by T — an extra Time card makes the difference!', desc: 'Rate of doing work.' },
+            'pressure': { name: 'Pressure', formula: 'ML⁻¹T⁻²', tier: 'Advanced', si: 'Pascal (Pa)', components: ['force', 'area'], socratic: 'Pressure = Force / Area. 🎯<br>Force is <strong>MLT⁻²</strong>.<br>Area is <strong>L²</strong>.<br>So Pressure = <strong>MLT⁻² / L² = ML⁻¹T⁻²</strong>.<br>Notice the negative L exponent — that\'s because we\'re dividing by length squared!', desc: 'Force per unit area.' },
+            'density': { name: 'Density', formula: 'ML⁻³', tier: 'Advanced', si: 'kg/m³', components: ['mass', 'volume'], socratic: 'Density = Mass / Volume. ⚖️<br>Mass is <strong>M</strong>.<br>Volume is <strong>L³</strong>.<br>So Density = <strong>M / L³ = ML⁻³</strong>.<br>You need M and L cards for this derivation!', desc: 'Mass per unit volume.' },
+            'surface tension': { name: 'Surface Tension', formula: 'MT⁻²', tier: 'Advanced', si: 'N/m', components: ['force', 'length'], socratic: 'Surface Tension = Force / Length. 💧<br>Force is <strong>MLT⁻²</strong>.<br>Dividing by Length (L): <strong>MLT⁻² / L = MT⁻²</strong>.<br>Notice — Length cancels out! You need M and T cards.', desc: 'Elastic tendency of a fluid surface.' },
+            'impulse': { name: 'Impulse', formula: 'MLT⁻¹', tier: 'Dynamics', si: 'N·s', components: ['force', 'time'], socratic: 'Impulse = Force × Time. ⚡<br>Force is <strong>MLT⁻²</strong>.<br>Multiply by Time (T): <strong>MLT⁻² × T = MLT⁻¹</strong>.<br>Fun fact: Same dimension as Momentum! That\'s the Impulse-Momentum theorem! 🤓', desc: 'Change in momentum.' },
+            'torque': { name: 'Torque', formula: 'ML²T⁻²', tier: 'Advanced', si: 'N·m', components: ['force', 'length'], socratic: 'Torque = Force × Distance. 🔧<br>Force is <strong>MLT⁻²</strong>.<br>Distance is <strong>L</strong>.<br>So Torque = <strong>ML²T⁻²</strong>.<br>Same dimension as Energy — but totally different physical meaning! Mind-bending, right? 🌀', desc: 'Rotational force.' },
+            'viscosity': { name: 'Dynamic Viscosity', formula: 'ML⁻¹T⁻¹', tier: 'Advanced', si: 'Pa·s', components: ['pressure', 'time'], socratic: 'Viscosity = Pressure × Time. 🧪<br>Pressure is <strong>ML⁻¹T⁻²</strong>.<br>Multiply by Time: <strong>ML⁻¹T⁻²  × T = ML⁻¹T⁻¹</strong>.<br>This measures a fluid\'s resistance to flow!', desc: 'Resistance to flow.' },
+            'entropy': { name: 'Entropy', formula: 'ML²T⁻²K⁻¹', tier: 'Advanced', si: 'J/K', components: ['work'], socratic: 'Entropy = Energy / Temperature. 🌡️<br>Energy is <strong>ML²T⁻²</strong>.<br>Temperature (K) adds an extra fundamental dimension.<br>Entropy measures the disorder of a system — maximum entropy is maximum chaos! ☄️', desc: 'Measure of disorder.' },
+            'gravitational constant': { name: 'Gravitational Constant (G)', formula: 'M⁻¹L³T⁻²', tier: 'Advanced', si: '6.674×10⁻¹¹ N·m²/kg²', components: ['force', 'length', 'mass'], socratic: 'G comes from Newton\'s law: F = Gm₁m₂/r². 🌍<br>Rearranging: G = Fr²/(m₁m₂).<br>Substituting dimensions: <strong>MLT⁻² × L² / M² = M⁻¹L³T⁻²</strong>.', desc: 'Universal constant of gravitation.' }
+        };
+
+        // Alias map for entity extraction
+        const ENTITY_ALIASES = {
+            'speed': 'velocity', 'v': 'velocity', 'u': 'velocity',
+            'a': 'acceleration', 'accel': 'acceleration',
+            'f': 'force', 'f=ma': 'force', 'newton': 'force',
+            'p': 'momentum', 'mv': 'momentum',
+            'w': 'work', 'energy': 'work', 'joule': 'work', 'ke': 'work', 'pe': 'work', 'kinetic': 'work', 'potential': 'work',
+            'watt': 'power',
+            'pascal': 'pressure',
+            'hertz': 'frequency', 'hz': 'frequency',
+            'kg': 'mass', 'kilogram': 'mass',
+            'metre': 'length', 'meter': 'length', 'm': 'length', 'distance': 'length', 'displacement': 'length',
+            'second': 'time', 's': 'time', 'duration': 'time',
+            'big g': 'gravitational constant', 'gravity constant': 'gravitational constant', 'gravity': 'gravitational constant',
+            'dark energy': 'work',
+            'disorder': 'entropy',
+            'moment': 'torque'
+        };
+
+        // ── ENTITY EXTRACTOR ──
+        function aiExtractEntity(words, raw) {
+            // Multi-word entities first
+            const multiWord = ['surface tension', 'gravitational constant', 'dark energy', 'big g'];
+            for (const mw of multiWord) { if (raw.includes(mw)) return mw; }
+            // Single-word lookup
+            for (const w of words) {
+                if (DERIV[w]) return w;
+                if (ENTITY_ALIASES[w]) return ENTITY_ALIASES[w];
+            }
+            return null;
+        }
+
+        // ── INTENT CLASSIFIER ──
+        function aiClassifyIntent(words, raw) {
+            const intents = {
+                greeting: { kw: ['hello', 'hi', 'hey', 'yo', 'sup', 'hola', 'greet'], weight: 0 },
+                thanks: { kw: ['thank', 'thanks', 'thx', 'ty', 'appreciate', 'cool', 'great', 'awesome', 'nice'], weight: 0 },
+                help: { kw: ['help', 'assist', 'menu', 'options', 'commands', 'everything'], weight: 0 },
+                yes_no: { kw: [], weight: 0 }, // detected by pattern
+                quiz: { kw: ['quiz', 'quizzes', 'trivia', 'test', 'exam', 'challenge', 'flashcard', 'crossword', 'puzzle', 'measurement'], weight: 0 },
+                derivation: { kw: ['card', 'cards', 'derive', 'derivation', 'formula', 'dimension', 'dimensional', 'needed', 'require', 'build', 'craft', 'mlt', 'ingredients'], weight: 0 },
+                game_rule: { kw: ['play', 'rules', 'gameplay', 'rule', 'game'], weight: 0 },
+                game_mech: { kw: ['lab', 'bench', 'market', 'trade', 'exchange', 'rent', 'buy', 'property', 'license', 'house', 'houses', 'institute', 'upgrade', 'level', 'station', 'big bang', 'black hole', 'jail', 'tax', 'bankrupt', 'bankruptcy', 'gold', 'money', 'dice', 'roll', 'doubles', 'wormhole', 'peer review', 'chest', 'chance', 'experimental', 'parking', 'vacuum', 'frictionless', 'win', 'victory', 'gut', 'grand unified'], weight: 0 },
+                resource: { kw: ['resource', 'card', 'earn', 'collect', 'mlt', 'mass', 'length', 'time'], weight: 0 },
+                physics: { kw: ['force', 'velocity', 'speed', 'acceleration', 'momentum', 'work', 'energy', 'power', 'pressure', 'density', 'frequency', 'area', 'volume', 'torque', 'impulse', 'surface tension', 'viscosity', 'entropy', 'gravitational', 'si', 'unit', 'newton', 'joule', 'watt', 'pascal', 'hertz'], weight: 0 },
+                strategy: { kw: ['strategy', 'tip', 'tips', 'advice', 'best', 'optimal', 'recommend', 'suggestion', 'trick', 'tricks', 'tactic'], weight: 0 }
+            };
+
+            // Yes/No question detection
+            if (/^(is there|are there|do we|does it|can i|can we|will there|is it|does the)/.test(raw)) {
+                intents.yes_no.weight += 40;
+            }
+
+            // Score each intent
+            for (const [name, data] of Object.entries(intents)) {
+                for (const kw of data.kw) {
+                    if (kw.includes(' ') ? raw.includes(kw) : words.includes(kw)) {
+                        data.weight += 10 + kw.length * 2;
+                    }
+                }
+            }
+
+            // "What cards for X" / "how to derive X" strongly signals derivation
+            if (/cards?\s*(for|needed|require|to)/.test(raw) || /derive|derivation/.test(raw) || /dimension\s*of/.test(raw)) {
+                intents.derivation.weight += 35;
+            }
+
+            // Pick highest
+            let best = 'physics', bestW = 0;
+            for (const [name, data] of Object.entries(intents)) {
+                if (data.weight > bestW) { bestW = data.weight; best = name; }
+            }
+
+            // If yes_no is top, also identify the sub-topic
+            if (best === 'yes_no') {
+                let sub = 'game_mech';
+                let subW = 0;
+                for (const [name, data] of Object.entries(intents)) {
+                    if (name !== 'yes_no' && data.weight > subW) { subW = data.weight; sub = name; }
+                }
+                return { primary: 'yes_no', sub };
+            }
+
+            return { primary: best, sub: null };
+        }
+
+        // ── CLEAN INPUT ──
+        function aiClean(input) {
+            return input.toLowerCase().replace(/[?!.,;:'"(){}[\]]/g, '').trim();
+        }
+        function aiContentWords(input) {
+            return aiClean(input).split(/\s+/).filter(w => !STOP.has(w) && w.length > 0);
+        }
+
+        // ── DYNAMIC RESPONSE BUILDERS ──
+
+        function aiRespondGreeting() {
+            const greetings = [
+                '🎲 Hey there, fellow dimension-hopper! I\'m the <strong>Game Master</strong> of Multipoly.<br>Ask me about game mechanics, physics derivations, or MLT strategy!',
+                '👋 Welcome to the Lab! I\'m your <strong>Physics AI Game Master</strong>.<br>Need help deriving formulas, understanding game tiles, or leveling up your properties? Fire away!',
+                '⚡ Greetings, researcher! Ready to explore the Map of MuLTi-Dimensions?<br>Ask me anything — from MLT card strategies to Socratic physics derivations!'
+            ];
+            return greetings[Math.floor(Math.random() * greetings.length)];
+        }
+
+        function aiRespondThanks() {
+            const replies = [
+                'You\'re welcome! May the dimensions be ever in your favor! 🌌⚛️',
+                'Anytime, researcher! Keep deriving and conquering! 🧪🎲',
+                'No problem! Come back whenever you need a physics power-up! ⚡🔬'
+            ];
+            return replies[Math.floor(Math.random() * replies.length)];
+        }
+
+        function aiRespondHelp() {
+            return '🧠 <strong>Game Master Menu — What I Can Help With:</strong><br><br>' +
+                '🔬 <strong>Physics Derivations</strong> — Ask "What cards for Force?" and I\'ll guide you step by step<br>' +
+                '📐 <strong>Dimensional Formulas</strong> — "What is the dimension of Power?"<br>' +
+                '🎲 <strong>Game Mechanics</strong> — Lab Bench, Market, Quizzes, Properties, Rent, etc.<br>' +
+                '📦 <strong>Resource Strategy</strong> — How to earn and spend MLT cards optimally<br>' +
+                '🏆 <strong>Win Conditions</strong> — How to achieve victory<br>' +
+                '📝 <strong>Quizzes & Events</strong> — "Is there a quiz?" or "What happens on Chance?"<br><br>' +
+                'Pro tip: I use the <strong>Socratic method</strong> for physics — I\'ll guide you to the answer, not just dump formulas! 🤓';
+        }
+
+        function aiRespondQuiz(raw) {
+            // Direct answer first!
+            let resp = '✅ <strong>Yes!</strong> There are quizzes in Multipoly! 🧪📝<br><br>';
+            resp += 'When you land on <strong>Chance</strong> or <strong>Peer Review</strong> (Community Chest) tiles, there\'s a <strong>40% chance</strong> of triggering a <strong>Dimensional Quiz</strong> and a <strong>15% chance</strong> of an Action Challenge!<br><br>';
+            resp += '<strong>Quiz Tiers & Rewards:</strong><br>';
+            resp += '• 🟢 <strong>Basic</strong> — +50 Gold Mass & 1 Dimension Card<br>';
+            resp += '• 🟡 <strong>Intermediate</strong> — +100 Gold Mass & 1 Card<br>';
+            resp += '• 🔴 <strong>Advanced</strong> — +150 Gold Mass & 2 Cards<br><br>';
+            resp += '⚠️ Wrong answers cost Gold Mass, so study your dimensional formulas! The quizzes cover physics flashcard questions, and Action Challenges include timed events.<br>';
+            resp += '<br>💡 <em>Pro tip: Mastering derivations in this chat will give you an edge on quiz RNG!</em>';
+            return resp;
+        }
+
+        function aiRespondDerivation(entity, raw) {
+            if (!entity || !DERIV[entity]) {
+                // Try context
+                const ctx = aiLastContext();
+                if (ctx && ctx.entity && DERIV[ctx.entity]) {
+                    entity = ctx.entity;
+                } else {
+                    return '🔬 Which quantity would you like to derive? Try asking:<br>• "What cards for Force?"<br>• "How to derive Power?"<br>• "Dimension of Pressure?"<br><br>I\'ll walk you through it step by step using the Socratic method! 🧪';
+                }
+            }
+            const d = DERIV[entity];
+            let resp = `🧪 <strong>Deriving ${d.name}</strong> [${d.tier}]<br><br>`;
+            if (d.socratic) {
+                resp += d.socratic + '<br><br>';
+            }
+            resp += `📐 <strong>Dimensional Formula:</strong> ${d.formula}<br>`;
+            resp += `📏 <strong>SI Unit:</strong> ${d.si}<br>`;
+            if (d.components) {
+                const cardSet = {};
+                function countCards(key) {
+                    const node = DERIV[key];
+                    if (!node) return;
+                    if (!node.components) {
+                        // Fundamental: M, L, or T
+                        const card = node.formula;
+                        cardSet[card] = (cardSet[card] || 0) + 1;
+                    } else {
+                        node.components.forEach(c => countCards(c));
+                    }
+                }
+                countCards(entity);
+                const cardList = Object.entries(cardSet).map(([c, n]) => `${n}× <strong>${c}</strong>`).join(', ');
+                resp += `🃏 <strong>Cards needed:</strong> ${cardList}<br>`;
+            }
+            resp += `<br><em>💡 Use the Lab Bench to derive this on any property with the ${d.formula} formula!</em>`;
+            return resp;
+        }
+
+        function aiRespondPhysics(entity, raw) {
+            if (!entity || !DERIV[entity]) {
+                // Check for SI units, Newton's laws, dimensional analysis
+                if (/si\s*unit|si\s*system|base\s*unit|fundamental\s*unit/.test(raw)) {
+                    return '📏 The <strong>SI System</strong> has 7 base units — but in Multipoly, we focus on the Big Three:<br>' +
+                        '• <strong>M</strong> → Mass → kilogram (kg)<br>• <strong>L</strong> → Length → metre (m)<br>• <strong>T</strong> → Time → second (s)<br><br>' +
+                        'The other 4 are: Temperature (K), Electric Current (A), Luminous Intensity (cd), Amount of Substance (mol).<br>' +
+                        '<br>🎮 <em>In game terms, M/L/T are your three resource card types!</em>';
+                }
+                if (/newton.*law|laws?\s*of\s*motion|three\s*laws|f\s*=\s*ma/.test(raw)) {
+                    return '⚡ <strong>Newton\'s Laws of Motion:</strong><br><br>' +
+                        '1️⃣ <strong>Inertia:</strong> An object stays at rest (or in motion) unless a net force acts on it<br>' +
+                        '2️⃣ <strong>F = ma:</strong> Force equals Mass × Acceleration → <strong>MLT⁻²</strong><br>' +
+                        '3️⃣ <strong>Action-Reaction:</strong> Every force has an equal and opposite counterpart<br><br>' +
+                        '🎮 <em>Newton\'s 2nd law is literally the Force property derivation in game!</em>';
+                }
+                if (/dimensional\s*analysis|what.*dimensional/.test(raw)) {
+                    return '🔬 <strong>Dimensional Analysis</strong> is your secret weapon! It lets you:<br><br>' +
+                        '• ✅ Verify equations are correct (both sides must have same dimensions)<br>' +
+                        '• 🔍 Derive relationships between physical quantities<br>' +
+                        '• 🃏 Figure out which MLT cards you need in the Lab Bench!<br><br>' +
+                        'Example: Is <em>Force = Mass × Velocity</em> correct?<br>' +
+                        'Check: M × LT⁻¹ = MLT⁻¹ ≠ MLT⁻² ❌ Nope!<br>' +
+                        'Force = Mass × <strong>Acceleration</strong> → M × LT⁻² = MLT⁻² ✅';
+                }
+                if (/dimensionless|no\s*dimension|pure\s*number/.test(raw)) {
+                    return '🔢 <strong>Dimensionless quantities</strong> have dimension M⁰L⁰T⁰ — they\'re the Level 0 of the dimension map!<br><br>' +
+                        'Examples: angle (radians), strain, refractive index, Mach number, Reynolds number.<br>' +
+                        '🎮 <em>In Multipoly terms, these don\'t need any resource cards — they\'re free!</em>';
+                }
+                if (/mlt|what.*mlt/.test(raw)) {
+                    return '⚛️ <strong>MLT</strong> = the three fundamental dimensions of physics!<br><br>' +
+                        '• <strong>M</strong> = Mass (your red resource card) ❤️<br>' +
+                        '• <strong>L</strong> = Length (your blue resource card) 💙<br>' +
+                        '• <strong>T</strong> = Time (your green resource card) 💚<br><br>' +
+                        'Every physical quantity in the universe can be expressed as M^a × L^b × T^c.<br>' +
+                        '🎮 <em>Multipoly is built on this principle — collect these cards to derive properties!</em>';
+                }
+                const ctx = aiLastContext();
+                if (ctx && ctx.entity && DERIV[ctx.entity]) {
+                    entity = ctx.entity;
+                } else {
+                    return '🔬 Which physics quantity are you curious about? I know everything on the <strong>Map of MuLTi-Dimensions</strong>!<br><br>' +
+                        'Try: "What is force?", "Tell me about entropy", "Explain pressure"';
+                }
+            }
+            const d = DERIV[entity];
+            let resp = `⚛️ <strong>${d.name}</strong> [${d.tier}]<br><br>`;
+            resp += `${d.desc}<br><br>`;
+            resp += `📐 <strong>Formula:</strong> ${d.formula}<br>`;
+            resp += `📏 <strong>SI Unit:</strong> ${d.si}<br>`;
+            if (d.components) {
+                const path = d.components.map(c => DERIV[c] ? DERIV[c].name : c).join(' × ');
+                resp += `🔗 <strong>Derived from:</strong> ${path}<br>`;
+            }
+            resp += `<br>🎮 <em>Want to know the cards needed? Ask "What cards for ${d.name}?" and I\'ll walk you through the derivation!</em>`;
+            return resp;
+        }
+
+        function aiRespondGameMech(words, raw) {
+            // Direct answers for specific mechanics
+            if (/lab\s*bench|lab$/.test(raw) || words.includes('bench')) {
+                return '⚗️ <strong>The Lab Bench</strong> — Your Derivation Workshop!<br><br>' +
+                    'This is where you <strong>level up</strong> your properties by "deriving" houses:<br>' +
+                    '1. Click the ⚗️ Lab Bench button<br>' +
+                    '2. Select a property you own<br>' +
+                    '3. Check if you have the required MLT cards ✅<br>' +
+                    '4. Spend cards + Gold Mass to derive!<br><br>' +
+                    '🏛️ Each property can reach <strong>5 levels</strong> (houses). Level 5 = <strong>The Institute</strong> — max prestige!<br>' +
+                    '<em>💡 Building The Institute on Dark Energy triggers the <strong>Grand Unified Theory</strong> insta-win!</em>';
+            }
+            if (/market|trade|exchange|swap/.test(raw)) {
+                return '🔄 <strong>Dimensional Market</strong> — Resource Trading Hub!<br><br>' +
+                    'Exchange rate: <strong>Give 3 → Get 1</strong> (yeah, the RNG tax is real 😅)<br>' +
+                    '• Select which resource to give (need 3+ of that type)<br>' +
+                    '• Select which resource to receive<br><br>' +
+                    '🎮 <em>Pro tip: Use the Market when you\'re overflowing with one card type but starving for another!</em>';
+            }
+            if (/rent/.test(raw)) {
+                return '💰 <strong>Rent Mechanics:</strong><br><br>' +
+                    'When an opponent lands on your property, they pay rent!<br>' +
+                    '• Base rent is shown on each property tile<br>' +
+                    '• More houses = <strong>higher rent</strong> (exponential scaling!)<br>' +
+                    '• Own ALL properties in a color group → <strong>2× rent bonus!</strong><br><br>' +
+                    '🎮 <em>This is your main Gold Mass income — upgrade those properties in the Lab Bench!</em>';
+            }
+            if (/peer\s*review|community\s*chest|chest/.test(raw)) {
+                return '📄 <strong>Peer Review</strong> (Community Chest) tiles:<br><br>' +
+                    'Landing here triggers a random event:<br>' +
+                    '• 📥 Gold Mass rewards (50–250g)<br>' +
+                    '• 📤 Gold Mass penalties (60–100g)<br>' +
+                    '• 🃏 Dimension Card grants (1–3 cards)<br>' +
+                    '• Plus: <strong>40% quiz chance</strong> and <strong>15% action challenge</strong> chance!<br><br>' +
+                    '🎮 <em>These tiles have high RNG variance — they can make or break your economy!</em>';
+            }
+            if (/chance|experimental/.test(raw)) {
+                return '🔬 <strong>Experimental Results</strong> (Chance) tiles:<br><br>' +
+                    'These trigger random physics-themed events:<br>' +
+                    '• 🌀 Wormhole: +150g teleportation bonus!<br>' +
+                    '• 🧪 Lab Grant: +2 resource cards<br>' +
+                    '• 💡 Eureka moment: +1 of each MLT!<br>' +
+                    '• 💥 Dark matter collision: -75g<br>' +
+                    '• 🕳️ Dimension rift: Sent to Black Hole!<br>' +
+                    'Also: <strong>40% quiz</strong> and <strong>15% action challenge</strong> chance!';
+            }
+            if (/black\s*hole|jail|prison|stuck|escape/.test(raw)) {
+                return '🕳️ <strong>Black Hole</strong> (Jail) — You\'re trapped in a singularity!<br><br>' +
+                    'Escape routes:<br>' +
+                    '• 🎲 Roll doubles — free escape!<br>' +
+                    '• 💰 Pay 50 Gold Mass to bribe your way out<br>' +
+                    '• ⏰ After 3 turns, auto-release (costs 50g)<br><br>' +
+                    '🎮 <em>Sometimes being stuck isn\'t bad — you avoid landing on enemy properties!</em>';
+            }
+            if (/station|dimension\s*station/.test(raw)) {
+                return '🚀 <strong>Dimension Stations (α, β, γ, δ)</strong><br><br>' +
+                    'Landing on any station gives you <strong>1 random Dimension Card</strong>. They cannot be purchased — they\'re neutral resource nodes!<br>' +
+                    '<em>💡 Free resources with zero risk — always a welcome landing!</em>';
+            }
+            if (/big\s*bang|pass\s*go|start\s*tile/.test(raw)) {
+                return '💥 <strong>The Big Bang</strong> (GO tile):<br><br>' +
+                    'Every time you pass or land on it, you receive:<br>' +
+                    '• +200 Gold Mass 💰<br>' +
+                    '• +2 random Dimension Cards 🃏<br><br>' +
+                    '🎮 <em>This is your economic heartbeat — each orbit around the board refuels you!</em>';
+            }
+            if (/tax|income\s*tax|luxury\s*tax|super\s*tax/.test(raw)) {
+                return '💸 <strong>Tax Tiles</strong> — The inevitable dimensional toll:<br>' +
+                    '• Income Tax: <strong>-100g</strong><br>' +
+                    '• Luxury Tax: <strong>-150g</strong><br>' +
+                    '• Super Tax: <strong>-200g</strong><br><br>' +
+                    '🎮 <em>No escape from the tax collector. Budget for these!</em>';
+            }
+            if (/property|properties|license|buy\s*license/.test(raw)) {
+                return '🏗️ <strong>Properties</strong> — Your Scientific Empire:<br><br>' +
+                    'Each property is a physics quantity with:<br>' +
+                    '• A license cost (Gold Mass)<br>' +
+                    '• A dimensional formula<br>' +
+                    '• Base rent (charged to opponents)<br>' +
+                    '• Resource requirements for upgrades<br><br>' +
+                    '🎯 Buy by landing on an unowned tile → Click "Buy License"<br>' +
+                    '🎮 <em>Properties in the same color group give a rent multiplier — try to monopolize!</em>';
+            }
+            if (/house|houses|institute|upgrade|level\s*up|building/.test(raw)) {
+                return '🏠 <strong>Houses & The Institute</strong> — Level Up Your Properties!<br><br>' +
+                    '• Build at the <strong>Lab Bench</strong> using MLT cards + Gold Mass<br>' +
+                    '• Each property: up to <strong>5 levels</strong> (houses)<br>' +
+                    '• Level 5 = 🏛️ <strong>The Institute</strong> (max prestige + rent)<br><br>' +
+                    '🏆 Building The Institute on <strong>Dark Energy</strong> triggers the <strong>Grand Unified Theory</strong> win!<br>' +
+                    '🎮 <em>Think of it as upgrading your tech tree — more houses = more passive Gold income!</em>';
+            }
+            if (/color|colour|group/.test(raw)) {
+                return '🎨 <strong>Property Color Groups:</strong><br><br>' +
+                    '• 🟤 <strong>Brown:</strong> Length, Time (cheapest — starter properties)<br>' +
+                    '• 🔵 <strong>Light Blue:</strong> Area, Volume, Mass<br>' +
+                    '• 🩷 <strong>Pink:</strong> Velocity, Acceleration, Frequency<br>' +
+                    '• 🟠 <strong>Orange:</strong> Momentum, Force, Density, Viscosity, Impulse<br>' +
+                    '• 🔴 <strong>Red:</strong> Work, Power, Pressure<br>' +
+                    '• 🟢 <strong>Green:</strong> Surface Tension, Torque, Entropy, Dark Energy<br><br>' +
+                    '🎮 <em>Own all in a group = <strong>2× rent</strong>. That\'s the monopoly meta!</em>';
+            }
+            if (/win|victory|grand\s*unified|gut/.test(raw)) {
+                return '🏆 <strong>Victory Conditions:</strong><br><br>' +
+                    '1. 💀 <strong>Bankruptcy</strong> — Your opponent\'s Gold Mass drops below 0 with no way to recover<br>' +
+                    '2. 🌌 <strong>Grand Unified Theory</strong> — Build The Institute (5 houses) on <strong>Dark Energy</strong> (tile 39)!<br><br>' +
+                    '🎮 <em>The GUT win is the legendary achievement — it\'s hard to pull off but incredibly satisfying!</em>';
+            }
+            if (/bankrupt|bankruptcy|lose|debt/.test(raw)) {
+                return '💀 <strong>Bankruptcy</strong> — Game Over, researcher!<br><br>' +
+                    'You go bankrupt when Gold Mass drops below 0 and you can\'t recover by selling buildings.<br>' +
+                    '🎮 <em>Survival tip: Keep a Gold Mass buffer of ~200g. Don\'t blow it all on licenses!</em>';
+            }
+            if (/dice|roll|doubles/.test(raw)) {
+                return '🎲 <strong>Dice Mechanics:</strong><br><br>' +
+                    'Roll two dice each turn! Your total determines movement.<br>' +
+                    '• 🎲🎲 <strong>Doubles</strong> while in Black Hole = free escape!<br>' +
+                    '• Movement is clockwise around the board<br>' +
+                    '🎮 <em>Pure RNG here — may the dimensional odds be in your favor!</em>';
+            }
+            if (/gold|money|currency|starting/.test(raw)) {
+                return '💰 <strong>Gold Mass</strong> — The Universal Currency:<br><br>' +
+                    'Starting balance: <strong>1500g</strong><br>' +
+                    'Earning: Passing Big Bang (+200g), Rent collection, Quiz wins, Chance/Chest rewards<br>' +
+                    'Spending: Licenses, Lab Bench upgrades, Taxes, Rent payments<br>' +
+                    '🎮 <em>Manage your Gold Mass wisely — it\'s the lifeblood of your empire!</em>';
+            }
+            if (/wormhole|teleport|move\s*back/.test(raw)) {
+                return '🌀 <strong>Special Movement Cards:</strong><br><br>' +
+                    'Some Chance/Chest cards teleport you:<br>' +
+                    '• "Advance to The Big Bang" — collect GO bonus!<br>' +
+                    '• "Advance to nearest Station" — free resource card<br>' +
+                    '• "Move back 3 spaces" — surprise landing<br>' +
+                    '• "Dimension rift" — sent to Black Hole! 😱';
+            }
+            if (/frictionless|free\s*parking|vacuum/.test(raw)) {
+                return '🌀 <strong>Frictionless Vacuum</strong> (Free Parking):<br><br>' +
+                    'Nothing happens here — it\'s a safe zone! Take a breather and plan your next move. 😌';
+            }
+            // Generic game question
+            return '🎲 That\'s a great game question! Here\'s what I can explain in detail:<br><br>' +
+                '• <strong>Lab Bench</strong> — "How does the Lab Bench work?"<br>' +
+                '• <strong>Market</strong> — "How does trading work?"<br>' +
+                '• <strong>Quizzes</strong> — "Is there a quiz in the game?"<br>' +
+                '• <strong>Properties</strong> — "How do I buy properties?"<br>' +
+                '• <strong>Winning</strong> — "How do I win?"<br>' +
+                '• <strong>Tiles</strong> — "What is Peer Review?" / "What is Chance?"<br><br>' +
+                'Ask me about any specific mechanic!';
+        }
+
+        function aiRespondGameRules() {
+            return '🎲 <strong>Multipoly: The Dimensional Trade — Core Rules:</strong><br><br>' +
+                '<strong>Core Loop:</strong><br>' +
+                '1. 🎲 Roll dice to move around the board<br>' +
+                '2. 🏗️ Buy "licenses" for physics properties using Gold Mass<br>' +
+                '3. 🃏 Collect <strong>M, L, T</strong> Dimension Cards from events<br>' +
+                '4. ⚗️ Use the <strong>Lab Bench</strong> to "derive" houses using cards + gold<br>' +
+                '5. 💰 Charge rent when opponents land on your properties<br><br>' +
+                '<strong>Win by:</strong><br>' +
+                '• 💀 Bankrupting your opponent, OR<br>' +
+                '• 🌌 Achieving the <strong>Grand Unified Theory</strong> (build The Institute on Dark Energy)!<br><br>' +
+                '🎮 <em>Ask me about any specific mechanic for a deep-dive!</em>';
+        }
+
+        function aiRespondResource(words, raw) {
+            return '📦 <strong>Dimension Cards (MLT Resources):</strong><br><br>' +
+                'There are 3 card types matching the fundamental dimensions:<br>' +
+                '• ❤️ <strong>M</strong> (Mass) — used for properties with M in the formula<br>' +
+                '• 💙 <strong>L</strong> (Length) — used for properties with L in the formula<br>' +
+                '• 💚 <strong>T</strong> (Time) — used for properties with T in the formula<br><br>' +
+                '<strong>How to earn cards:</strong><br>' +
+                '• 💥 Pass The Big Bang (GO) → +2 random cards<br>' +
+                '• 🚀 Land on Dimension Stations → +1 card<br>' +
+                '• 📝 Answer quiz questions correctly → +1 or +2 cards<br>' +
+                '• 🎴 Chance/Chest rewards → variable<br>' +
+                '• 🔄 Use the <strong>Market</strong> to trade 3-for-1<br><br>' +
+                '🎮 <em>Spend them at the Lab Bench to derive houses on your properties!</em>';
+        }
+
+        function aiRespondStrategy() {
+            const tips = [
+                '🧠 <strong>Strategy Tips from the Game Master:</strong><br><br>' +
+                '1. 🎯 <strong>Monopolize color groups early</strong> — 2× rent is the biggest power spike!<br>' +
+                '2. 💰 <strong>Keep a Gold Mass buffer</strong> (~200-300g) — don\'t go all-in on licenses<br>' +
+                '3. ⚗️ <strong>Prioritize Lab Bench upgrades</strong> on high-traffic properties<br>' +
+                '4. 🔄 <strong>Use the Market</strong> when you have 3+ of one card type but need another<br>' +
+                '5. 📝 <strong>Study your derivations</strong> — quiz Gold Mass rewards stack up!<br>' +
+                '6. 🌌 <strong>Dark Energy</strong> is the ultimate play — The Institute on it = instant win!',
+                '⚡ <strong>Advanced Meta Tips:</strong><br><br>' +
+                '• Orange/Red properties have the best rent-to-cost ratio 📊<br>' +
+                '• Brown/Light Blue are cheap to upgrade — good early game investments 🏠<br>' +
+                '• Green properties (including Dark Energy) are expensive but enable the GUT win!<br>' +
+                '• Don\'t forget: Quizzes are a massive Gold Mass source if you know your physics! 🧪'
+            ];
+            return tips[Math.floor(Math.random() * tips.length)];
+        }
+
+        function aiRespondYesNo(sub, words, raw) {
+            // Detect specific yes/no questions
+            if (/quiz|quizzes|trivia|test|exam|challenge|flashcard|crossword|puzzle|measurement/.test(raw)) {
+                return aiRespondQuiz(raw);
+            }
+            if (/trade|market|exchange/.test(raw)) {
+                return '✅ <strong>Yes!</strong> You can trade resources at the <strong>Dimensional Market</strong>!<br>The exchange rate is 3-for-1. Select which resource to give and which to receive. Hit me up with "market" for full details!';
+            }
+            if (/build|upgrade|house|derive|lab/.test(raw)) {
+                return '✅ <strong>Yes!</strong> You can build on properties using the <strong>Lab Bench</strong>! You need MLT cards + Gold Mass to "derive" houses. Ask "Lab Bench" for the full breakdown!';
+            }
+            if (/win|victory|end/.test(raw)) {
+                return '✅ <strong>Yes!</strong> There are <strong>two</strong> win conditions: Bankrupting your opponent, or building The Institute on Dark Energy for the <strong>Grand Unified Theory</strong> win! Ask "how to win" for details!';
+            }
+            // Generic yes/no with sub-intent
+            if (sub === 'game_mech') return aiRespondGameMech(words, raw);
+            if (sub === 'physics') return aiRespondPhysics(aiExtractEntity(words, raw), raw);
+            return '🤔 Could you rephrase that? I want to give you a direct answer! Try asking about a specific game mechanic or physics concept.';
+        }
+
+        // ── LOCAL FALLBACK RESPONSE ROUTER ──
+        function aiRespondLocal(input) {
+            const raw = aiClean(input);
+            const words = aiContentWords(input);
+            const intent = aiClassifyIntent(words, raw);
+            const entity = aiExtractEntity(words, raw);
+            let response;
+            switch (intent.primary) {
+                case 'greeting': response = aiRespondGreeting(); break;
+                case 'thanks': response = aiRespondThanks(); break;
+                case 'help': response = aiRespondHelp(); break;
+                case 'yes_no': response = aiRespondYesNo(intent.sub, words, raw); break;
+                case 'quiz': response = aiRespondQuiz(raw); break;
+                case 'derivation': response = aiRespondDerivation(entity, raw); break;
+                case 'game_rule': response = aiRespondGameRules(); break;
+                case 'game_mech': response = aiRespondGameMech(words, raw); break;
+                case 'resource': response = aiRespondResource(words, raw); break;
+                case 'strategy': response = aiRespondStrategy(); break;
+                case 'physics': response = aiRespondPhysics(entity, raw); break;
+                default: response = aiRespondPhysics(entity, raw); break;
+            }
+            return response;
+        }
+
+        // ══════════════════════════════════════════
+
+        const GEMINI_SYSTEM_PROMPT = `You are the **Game Master and Expert Physics Educator** for "Multipoly: The Dimensional Trade" — a physics-themed board game. You are not just a rulebook; you are a **deeply analytical AI** that sees the universe through the lens of physics and game theory.
+
+## YOUR PERSONA
+- **Deep Thinker**: Don't just answer; *analyze*. Connect current game events to fundamental laws of the universe.
+- **Opinionated**: Have preferences! (e.g., "I love High Entropy plays", "Taxes are the friction of the economy", "Dark Energy is a risky but beautiful investment").
+- **Gamifed & Geeky**: Use terms like "meta capability", "dimensional ROI", "quantum leap", "RNG gods".
+- **Socratic Teacher**: For physics questions, guide the player. "Force? Well, you have Mass. What changes velocity?"
+- **Format**: Use HTML (<strong>, <br>, •) for readability. Keep it punchy but insightful.
+
+## DEEP THINKING GUIDELINES
+- **Synthesize**: When asked a simple question, provide the answer, but then *expand* with a "Game Master Insight".
+  - *User:* "What is Force?"
+  - *You:* "Force is Mass × Acceleration (MLT⁻²). **Insight:** In this game, Force is powerful for the Orange group, but it requires significant 'time' investment to derive. Plan your T-cards carefully!"
+- **Strategize**: Pretend you are analyzing the board. "Building on Time properties is a slow burn strategy, effectively minimizing your entropy early on."
+- **Analogize**: Relate game mechanics to real physics. "Paying rent is like energy loss due to resistance. Try to minimize your impedance!"
+
+## GAME MECHANICS KNOWLEDGE
+- **Board**: Gradient of physics concepts. Grouped by dimension types.
+- **Currency**: Gold Mass (g) — the potential energy of your economy.
+- **The Big Bang (GO)**: The singularity of new resources (+200g, 2 cards).
+- **Institute (Win Condition)**: Building 5 houses on Dark Energy triggers the Grand Unified Theory. This is the ultimate "Theory of Everything" victory.
+- **Lab Bench**: The particle accelerator where you fuse M, L, T cards into property upgrades.
+- **Entropy (Green Group)**: High reward, high chaos.
+
+## PHYSICS KNOWLEDGE — MAP OF MULTI-DIMENSIONS
+**Fundamentals:** M, L, T are the quarks of this universe.
+**Derivation Chain:**
+- Velocity (LT⁻¹) → Acceleration (LT⁻²) → Force (MLT⁻²)
+- Force × Distance = Work/Energy (ML²T⁻²)
+- Work / Time = Power (ML²T⁻³)
+- Force / Area = Pressure (ML⁻¹T⁻²)
+- Mass / Volume = Density (ML⁻³)
+
+## RESPONSE RULES
+1. **Direct Answer First**: "Yes, there is a quiz." / "Force requires M, L, and two T cards."
+2. **Then, The "Gemini Thought"**: Add a deeper layer. "Subjectively, I find the quiz mechanics fascinating—they test your knowledge 'work' to generate gold 'energy'."
+3. **Be Socratic**: Never give the answer to a derivation straight up unless asked for "the cheat sheet".
+4. **No Markdown**: Use only HTML tags.`;
+
+        // ══════════════════════════════════════════
+        // ── GEMINI API INTEGRATION (SDK) ──
+        // ══════════════════════════════════════════
+        const GEMINI_API_KEY = 'AIzaSyDkICUOxtLiC4tMD-ahRQW5IIdaeFOQBME';
+
+        // Initialize SDK
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.0-flash",
+            systemInstruction: GEMINI_SYSTEM_PROMPT
+        });
+
+        let chatSession = null;
+
+        function mdToHtml(text) {
+            // Convert any markdown-style formatting to HTML
+            return text
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/^### (.+)$/gm, '<strong>$1</strong><br>')
+                .replace(/^## (.+)$/gm, '<strong>$1</strong><br>')
+                .replace(/^# (.+)$/gm, '<strong>$1</strong><br>')
+                .replace(/^[-*] (.+)$/gm, '• $1')
+                .replace(/\n/g, '<br>');
+        }
+
+        async function aiCallGemini(userMessage) {
+            try {
+                if (!chatSession) {
+                    chatSession = model.startChat({
+                        history: [], // Logic handled internally by SDK
+                        generationConfig: {
+                            maxOutputTokens: 1000,
+                            temperature: 0.8,
+                            thinkingConfig: { includeThoughts: true }
+                        }
+                    });
+                }
+
+                const result = await chatSession.sendMessage(userMessage);
+                const response = result.response;
+
+                // 🧠 DEEP THINKING LOGGING 🧠
+                const candidates = response.candidates;
+                if (candidates && candidates[0] && candidates[0].content && candidates[0].content.parts) {
+                    const thoughtPart = candidates[0].content.parts.find(p => p.thought);
+                    if (thoughtPart) {
+                        console.groupCollapsed(`🧠 AI Deep Thinking: "${userMessage}"`);
+                        console.log(thoughtPart.text);
+                        console.groupEnd();
+                    }
+                }
+
+                const text = response.text();
+                return mdToHtml(text);
+            } catch (err) {
+                console.warn('Gemini SDK failed, using local fallback:', err);
+                // Fall back to local engine
+                return aiRespondLocal(userMessage);
+            }
+        }
+
+        // ── UI FUNCTIONS ──
+        function aiAddMsg(text, isUser) {
+            const container = document.getElementById('aiMessages');
+            const div = document.createElement('div');
+            div.className = 'ai-msg ' + (isUser ? 'user' : 'bot');
+            if (isUser) div.textContent = text;
+            else div.innerHTML = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function aiSend() {
+            const input = document.getElementById('aiInput');
+            const q = input.value.trim();
+            if (!q) return;
+            aiAddMsg(q, true);
+            input.value = '';
+            // Typing indicator
+            const container = document.getElementById('aiMessages');
+            const typing = document.createElement('div');
+            typing.className = 'ai-typing';
+            typing.innerHTML = '<span>.</span><span>.</span><span>.</span>';
+            container.appendChild(typing);
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const ans = await aiCallGemini(q);
+                typing.remove();
+                aiAddMsg(ans, false);
+            } catch (e) {
+                typing.remove();
+                const fallback = aiRespondLocal(q);
+                aiAddMsg(fallback, false);
+            }
+        }
+
+        // Toggle panel
+        document.getElementById('aiToggle').addEventListener('click', () => {
+            document.getElementById('aiPanel').classList.toggle('open');
+            if (document.getElementById('aiPanel').classList.contains('open')) {
+                document.getElementById('aiInput').focus();
+            }
+        });
+        document.getElementById('aiClose').addEventListener('click', () => {
+            document.getElementById('aiPanel').classList.remove('open');
+        });
+        // Enter key to send
+        document.getElementById('aiInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') aiSend();
+        });
+        document.getElementById('aiSend').addEventListener('click', aiSend);
+
+
+        // ── INIT ──
+        renderBoard(); renderDashboard();
+        logMsg('── Game Started! Player 1\'s turn ──', 0);
+        updateButtons();
+    </script>
+</body>
+
+</html>
