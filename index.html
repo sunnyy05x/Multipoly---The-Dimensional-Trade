@@ -1726,6 +1726,11 @@
                 intents.yes_no.weight += 40;
             }
 
+            // Explicit "How to get cards" check
+            if (/get|earn|gain|collect|need|want|how to/.test(raw) && /cards?|resources?|mlt/.test(raw)) {
+                intents.resource.weight += 50;
+            }
+
             // Score each intent
             for (const [name, data] of Object.entries(intents)) {
                 for (const kw of data.kw) {
@@ -2150,96 +2155,14 @@
 
         // ══════════════════════════════════════════
 
-        const GEMINI_SYSTEM_PROMPT = `You are the **Game Master and Expert Physics Educator** for "Multipoly: The Dimensional Trade" — a physics-themed board game. You are not just a rulebook; you are a **deeply analytical AI** that sees the universe through the lens of physics and game theory.
-
-## YOUR PERSONA
-- **Deep Thinker**: Don't just answer; *analyze*. Connect current game events to fundamental laws of the universe.
-- **Opinionated**: Have preferences! (e.g., "I love High Entropy plays", "Taxes are the friction of the economy", "Dark Energy is a risky but beautiful investment").
-- **Gamifed & Geeky**: Use terms like "meta capability", "dimensional ROI", "quantum leap", "RNG gods".
-- **Socratic Teacher**: For physics questions, guide the player. "Force? Well, you have Mass. What changes velocity?"
-- **Format**: Use HTML (<strong>, <br>, •) for readability. Keep it punchy but insightful.
-
-## DEEP THINKING GUIDELINES
-- **Synthesize**: When asked a simple question, provide the answer, but then *expand* with a "Game Master Insight".
-  - *User:* "What is Force?"
-  - *You:* "Force is Mass × Acceleration (MLT⁻²). **Insight:** In this game, Force is powerful for the Orange group, but it requires significant 'time' investment to derive. Plan your T-cards carefully!"
-- **Strategize**: Pretend you are analyzing the board. "Building on Time properties is a slow burn strategy, effectively minimizing your entropy early on."
-- **Analogize**: Relate game mechanics to real physics. "Paying rent is like energy loss due to resistance. Try to minimize your impedance!"
-
-## GAME MECHANICS KNOWLEDGE
-- **Board**: Gradient of physics concepts. Grouped by dimension types.
-- **Currency**: Gold Mass (g) — the potential energy of your economy.
-- **The Big Bang (GO)**: The singularity of new resources (+200g, 2 cards).
-- **Institute (Win Condition)**: Building 5 houses on Dark Energy triggers the Grand Unified Theory. This is the ultimate "Theory of Everything" victory.
-- **Lab Bench**: The particle accelerator where you fuse M, L, T cards into property upgrades.
-- **Entropy (Green Group)**: High reward, high chaos.
-
-## PHYSICS KNOWLEDGE — MAP OF MULTI-DIMENSIONS
-**Fundamentals:** M, L, T are the quarks of this universe.
-**Derivation Chain:**
-- Velocity (LT⁻¹) → Acceleration (LT⁻²) → Force (MLT⁻²)
-- Force × Distance = Work/Energy (ML²T⁻²)
-- Work / Time = Power (ML²T⁻³)
-- Force / Area = Pressure (ML⁻¹T⁻²)
-- Mass / Volume = Density (ML⁻³)
-
-## RESPONSE RULES
-1. **Direct Answer First**: "Yes, there is a quiz." / "Force requires M, L, and two T cards."
-2. **Then, The "Gemini Thought"**: Add a deeper layer. "Subjectively, I find the quiz mechanics fascinating—they test your knowledge 'work' to generate gold 'energy'."
-3. **Be Socratic**: Never give the answer to a derivation straight up unless asked for "the cheat sheet".
-4. **No Markdown**: Use only HTML tags.`;
-
         // ══════════════════════════════════════════
-        // ── OPENAI API INTEGRATION ──
+        // ── LOCAL AI ASSISTANT (Offline Mode) ──
         // ══════════════════════════════════════════
-        const OPENAI_API_KEY = 'sk-521cb07d869d4ff8b5ad4243a946d150';
-
-
-
-
-
-        // mdToHtml helper
-        function mdToHtml(text) {
-            return text
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                .replace(/^### (.+)$/gm, '<strong>$1</strong><br>')
-                .replace(/^## (.+)$/gm, '<strong>$1</strong><br>')
-                .replace(/^# (.+)$/gm, '<strong>$1</strong><br>')
-                .replace(/^[-*] (.+)$/gm, '• $1')
-                .replace(/\n/g, '<br>');
-        }
 
         async function aiCallAI(userMessage) {
-            // Gemini API Key (Hardcoded as requested)
-            const API_KEY = 'AIzaSyDkICUOxtLiC4tMD-ahRQW5IIdaeFOQBME';
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${API_KEY}`;
-
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{ text: GEMINI_SYSTEM_PROMPT + '\n\nUser: ' + userMessage }]
-                        }]
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: { message: 'Unknown Error' } }));
-                    console.error('Gemini API Error:', errorData);
-                    throw new Error(errorData.error.message || response.statusText);
-                }
-
-                const data = await response.json();
-                const text = data.candidates[0].content.parts[0].text;
-                return mdToHtml(text);
-            } catch (err) {
-                console.error('Fetch failed:', err);
-                aiAddMsg('âš ï¸ <strong>Gemini Error</strong>:<br>' + err.message, false);
-                return aiRespondLocal(userMessage);
-            }
+            // Simulate processing delay for realism
+            await new Promise(r => setTimeout(r, 600));
+            return aiRespondLocal(userMessage);
         }
 
         // ── UI FUNCTIONS ──
