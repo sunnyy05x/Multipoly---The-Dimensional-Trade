@@ -2196,7 +2196,7 @@
         // Initialize SDK
         const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash",
+            model: "gemini-1.5-flash",
             systemInstruction: GEMINI_SYSTEM_PROMPT
         });
 
@@ -2221,31 +2221,18 @@
                         history: [], // Logic handled internally by SDK
                         generationConfig: {
                             maxOutputTokens: 1000,
-                            temperature: 0.8,
-                            thinkingConfig: { includeThoughts: true }
+                            temperature: 0.8
                         }
                     });
                 }
 
                 const result = await chatSession.sendMessage(userMessage);
                 const response = result.response;
-
-                // 🧠 DEEP THINKING LOGGING 🧠
-                const candidates = response.candidates;
-                if (candidates && candidates[0] && candidates[0].content && candidates[0].content.parts) {
-                    const thoughtPart = candidates[0].content.parts.find(p => p.thought);
-                    if (thoughtPart) {
-                        console.groupCollapsed(`🧠 AI Deep Thinking: "${userMessage}"`);
-                        console.log(thoughtPart.text);
-                        console.groupEnd();
-                    }
-                }
-
                 const text = response.text();
                 return mdToHtml(text);
             } catch (err) {
-                console.warn('Gemini SDK failed, using local fallback:', err);
-                // Fall back to local engine
+                console.warn('Gemini SDK failed,', err);
+                aiAddMsg(`⚠️ <strong>API Error</strong>: ${err.message || 'Unknown error'}. using local brain...`, false);
                 return aiRespondLocal(userMessage);
             }
         }
