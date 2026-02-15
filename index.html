@@ -2196,14 +2196,13 @@
         // Initialize SDK
         const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({
-            model: "gemini-pro",
+            model: "gemini-1.5-flash",
             systemInstruction: GEMINI_SYSTEM_PROMPT
         });
 
         let chatSession = null;
 
         function mdToHtml(text) {
-            // Convert any markdown-style formatting to HTML
             return text
                 .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\*(.+?)\*/g, '<em>$1</em>')
@@ -2218,22 +2217,38 @@
             try {
                 if (!chatSession) {
                     chatSession = model.startChat({
-                        history: [], // Logic handled internally by SDK
+                        history: [],
                         generationConfig: {
                             maxOutputTokens: 1000,
                             temperature: 0.8
                         }
                     });
                 }
-
                 const result = await chatSession.sendMessage(userMessage);
                 const response = result.response;
                 const text = response.text();
                 return mdToHtml(text);
             } catch (err) {
-                console.warn('Gemini SDK failed,', err);
-                aiAddMsg(`⚠️ <strong>API Error</strong>: ${err.message || 'Unknown error'}. using local brain...`, false);
-                return aiRespondLocal(userMessage);
+                console.warn('Gemini SDK failed, trying raw REST API...', err);
+                // ── RAW REST API FALLBACK ──
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: GEMINI_SYSTEM_PROMPT + '\n\nUser: ' + userMessage }] }]
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error.message);
+                    if (!data.candidates || !data.candidates[0].content) throw new Error('No response candidates');
+                    const text = data.candidates[0].content.parts[0].text;
+                    return mdToHtml(text);
+                } catch (restErr) {
+                    aiAddMsg(`⚠️ <strong>Connection Failed</strong>: ${restErr.message}. using local brain...`, false);
+                    return aiRespondLocal(userMessage);
+                }
             }
         }
 
