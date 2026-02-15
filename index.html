@@ -1418,7 +1418,7 @@
 
         function endTurn() {
             if (gameOver) return;
-            turnPhase = 'roll'; current = (current + 1) % 2;
+            turnPhase = 'roll'; current = (current + 1) % players.length;
             logMsg(`── ${players[current].name}'s turn ──`, current);
             updateButtons(); renderDashboard(); refreshTooltips();
         }
@@ -2236,9 +2236,9 @@
                 const text = data.candidates[0].content.parts[0].text;
                 return mdToHtml(text);
             } catch (err) {
-                 console.error('Fetch failed:', err);
-                 aiAddMsg('âš ï¸ <strong>Gemini Error</strong>:<br>' + err.message, false);
-                 return aiRespondLocal(userMessage);
+                console.error('Fetch failed:', err);
+                aiAddMsg('âš ï¸ <strong>Gemini Error</strong>:<br>' + err.message, false);
+                return aiRespondLocal(userMessage);
             }
         }
 
