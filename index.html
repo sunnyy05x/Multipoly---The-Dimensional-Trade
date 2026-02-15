@@ -922,6 +922,30 @@
                 opacity: 1
             }
         }
+
+        .setup-options {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .setup-btn {
+            background: var(--cyan);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform .2s;
+        }
+
+        .setup-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--cyan);
+        }
     </style>
 </head>
 
@@ -943,6 +967,17 @@
     </div>
     <div class="modal-overlay" id="quizModal">
         <div class="modal-box" id="quizContent"></div>
+    </div>
+
+    <div class="modal-overlay" id="setupModal" style="display:flex; z-index: 300;">
+        <div class="modal-box">
+            <h2 style="color:var(--cyan);margin-bottom:15px">⚛ SELECT PLAYERS ⚛</h2>
+            <div class="setup-options">
+                <button class="setup-btn" onclick="startGame(2)">2 Players</button>
+                <button class="setup-btn" onclick="startGame(3)">3 Players</button>
+                <button class="setup-btn" onclick="startGame(4)">4 Players</button>
+            </div>
+        </div>
     </div>
 
     <!-- AI ASSISTANT -->
@@ -970,7 +1005,9 @@
         // ── SVG TOKENS ──
         const SVG_ATOM = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="8" fill="#ff4081"/><ellipse cx="50" cy="50" rx="35" ry="12" fill="none" stroke="#ff4081" stroke-width="2"/><ellipse cx="50" cy="50" rx="35" ry="12" fill="none" stroke="#ff4081" stroke-width="2" transform="rotate(60 50 50)"/><ellipse cx="50" cy="50" rx="35" ry="12" fill="none" stroke="#ff4081" stroke-width="2" transform="rotate(120 50 50)"/><circle cx="85" cy="50" r="3" fill="#ff80ab"/><circle cx="32" cy="28" r="3" fill="#ff80ab"/><circle cx="32" cy="72" r="3" fill="#ff80ab"/></svg>`;
         const SVG_ROCKET = `<svg viewBox="0 0 100 100"><path d="M50 10 C50 10 70 30 70 60 L60 75 L55 65 L50 80 L45 65 L40 75 L30 60 C30 30 50 10 50 10Z" fill="#40c4ff" stroke="#80d8ff" stroke-width="1.5"/><circle cx="50" cy="42" r="6" fill="#0a0e1a"/><path d="M30 60 L22 65 L28 55Z" fill="#0288d1"/><path d="M70 60 L78 65 L72 55Z" fill="#0288d1"/><path d="M42 75 L50 95 L58 75" fill="#ff6d00" opacity=".8"/><path d="M45 75 L50 88 L55 75" fill="#ffd600" opacity=".9"/></svg>`;
-        const PLAYER_SVGS = [SVG_ATOM, SVG_ROCKET];
+        const SVG_MICROSCOPE = `<svg viewBox="0 0 100 100"><path d="M50 20 L50 50 L40 60 L60 60 L50 50" fill="none" stroke="#69f0ae" stroke-width="3"/><path d="M40 60 L35 80 L65 80 L60 60 Z" fill="#69f0ae"/><circle cx="50" cy="15" r="5" fill="#b9f6ca"/><rect x="30" y="80" width="40" height="5" fill="#00c853"/></svg>`;
+        const SVG_DNA = `<svg viewBox="0 0 100 100"><path d="M30 10 Q70 30 30 50 Q70 70 30 90" fill="none" stroke="#ffd740" stroke-width="3"/><path d="M70 10 Q30 30 70 50 Q30 70 70 90" fill="none" stroke="#ffff00" stroke-width="3"/><circle cx="30" cy="10" r="3" fill="#ffab00"/><circle cx="70" cy="90" r="3" fill="#ffab00"/></svg>`;
+        const PLAYER_SVGS = [SVG_ATOM, SVG_ROCKET, SVG_MICROSCOPE, SVG_DNA];
 
         // ── BOARD DATA ──
         const GROUPS = { brown: '#8B4513', ltblue: '#4fc3f7', pink: '#f06292', orange: '#ff9800', red: '#ef5350', green: '#66bb6a' };
@@ -1044,10 +1081,7 @@
         ];
 
         // ── PLAYER STATE ──
-        let players = [
-            { name: 'Player 1', gold: 1500, pos: 0, inv: { M: 0, L: 0, T: 0 }, props: [], inJail: false, jailTurns: 0 },
-            { name: 'Player 2', gold: 1500, pos: 0, inv: { M: 0, L: 0, T: 0 }, props: [], inJail: false, jailTurns: 0 }
-        ];
+        let players = [];
         let current = 0, turnPhase = 'roll', gameOver = false;
         let lastDice = [0, 0];
         let marketGive = '', marketGet = '';
@@ -2269,10 +2303,47 @@
         document.getElementById('aiSend').addEventListener('click', aiSend);
 
 
+        // ── GAME START ──
+        function startGame(num) {
+            document.getElementById('setupModal').style.display = 'none';
+            players = [];
+            for (let i = 0; i < num; i++) {
+                players.push({
+                    name: `Player ${i + 1}`,
+                    gold: 1500,
+                    pos: 0,
+                    inv: { M: 0, L: 0, T: 0 },
+                    props: [],
+                    inJail: false,
+                    jailTurns: 0
+                });
+            }
+            renderBoard();
+            renderDashboard();
+            logMsg(`── Game Started! ${num} Players ──`, 0);
+            updateButtons();
+        }
+
+        // ── EXPORT TO WINDOW ──
+        window.startGame = startGame;
+        window.rollDice = rollDice;
+        window.buyProperty = buyProperty;
+        window.openLabBench = openLabBench;
+        window.openMarket = openMarket;
+        window.payJail = payJail;
+        window.endTurn = endTurn;
+        window.showTileInfo = showTileInfo;
+        window.closeModal = closeModal;
+        window.answerQuiz = answerQuiz;
+        window.stopActionTimer = stopActionTimer;
+        window.actionResult = actionResult;
+        window.deriveHouseOn = deriveHouseOn;
+        window.marketSelectGive = marketSelectGive;
+        window.marketSelectGet = marketSelectGet;
+        window.executeMarketTrade = executeMarketTrade;
+
         // ── INIT ──
-        renderBoard(); renderDashboard();
-        logMsg('── Game Started! Player 1\'s turn ──', 0);
-        updateButtons();
+        // Wait for setup
     </script>
 </body>
 
