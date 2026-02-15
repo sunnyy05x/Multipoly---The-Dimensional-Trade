@@ -997,6 +997,19 @@
             <input type="text" id="aiInput" placeholder="Ask a physics question..." autocomplete="off">
             <button class="ai-send" id="aiSend" title="Send">➤</button>
         </div>
+        <div id="aiKeyConfig"
+            style="padding:10px;border-top:1px solid var(--border);display:none;background:rgba(0,0,0,0.5)">
+            <p style="font-size:0.7rem;margin-bottom:5px;color:#ef5350">⚠️ Connection Failed. Enter valid API Key:</p>
+            <div style="display:flex;gap:5px">
+                <input type="password" id="apiKeyInput" placeholder="Paste Gemini API Key"
+                    style="flex:1;background:#0a0e1a;border:1px solid var(--border);color:white;padding:5px;border-radius:4px">
+                <button onclick="saveApiKey()"
+                    style="background:var(--green);border:none;color:black;padding:5px 10px;border-radius:4px;cursor:pointer">Save</button>
+            </div>
+            <p style="font-size:0.6rem;opacity:0.6;margin-top:5px">Get key from <a
+                    href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--cyan)">Google AI
+                    Studio</a></p>
+        </div>
     </div>
 
     <script type="module">
@@ -2193,15 +2206,38 @@
         // ══════════════════════════════════════════
         const GEMINI_API_KEY = 'AIzaSyDkICUOxtLiC4tMD-ahRQW5IIdaeFOQBME';
 
-        // Initialize SDK
-        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-            systemInstruction: GEMINI_SYSTEM_PROMPT
-        });
+        function getApiKey() {
+            return localStorage.getItem('gemini_api_key') || GEMINI_API_KEY;
+        }
 
+        // Initialize SDK (Lazily or re-init on key change)
+        let genAI = null;
+        let model = null;
         let chatSession = null;
 
+        function initAI() {
+            const key = getApiKey();
+            genAI = new GoogleGenerativeAI(key);
+            model = genAI.getGenerativeModel({
+                model: "gemini-1.5-flash",
+                systemInstruction: GEMINI_SYSTEM_PROMPT
+            });
+            chatSession = null; // Reset session on re-init
+        }
+
+        initAI();
+
+        window.saveApiKey = function () {
+            const inp = document.getElementById('apiKeyInput');
+            if (inp.value.trim()) {
+                localStorage.setItem('gemini_api_key', inp.value.trim());
+                initAI();
+                document.getElementById('aiKeyConfig').style.display = 'none';
+                aiAddMsg('🔑 API Key updated! Try asking again.', false);
+            }
+        };
+
+        // mdToHtml helper
         function mdToHtml(text) {
             return text
                 .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -2232,7 +2268,8 @@
                 console.warn('Gemini SDK failed, trying raw REST API...', err);
                 // ── RAW REST API FALLBACK ──
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                    const key = getApiKey();
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2246,7 +2283,8 @@
                     const text = data.candidates[0].content.parts[0].text;
                     return mdToHtml(text);
                 } catch (restErr) {
-                    aiAddMsg(`⚠️ <strong>Connection Failed</strong>: ${restErr.message}. using local brain...`, false);
+                    document.getElementById('aiKeyConfig').style.display = 'block';
+                    aiAddMsg(`⚠️ <strong>Connection Failed</strong>: ${restErr.message}.<br>Please update your API Key below.`, false);
                     return aiRespondLocal(userMessage);
                 }
             }
