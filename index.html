@@ -1001,10 +1001,13 @@
             style="padding:10px;border-top:1px solid var(--border);display:none;background:rgba(0,0,0,0.5)">
             <p style="font-size:0.7rem;margin-bottom:5px;color:#ef5350">⚠️ Connection Failed. Enter valid API Key:</p>
             <div style="display:flex;gap:5px">
-                <input type="password" id="apiKeyInput" placeholder="Paste Gemini API Key"
+                <input type="password" id="apiKeyInput" placeholder="Paste Gemini/OpenAI Key"
                     style="flex:1;background:#0a0e1a;border:1px solid var(--border);color:white;padding:5px;border-radius:4px">
                 <button onclick="saveApiKey()"
                     style="background:var(--green);border:none;color:black;padding:5px 10px;border-radius:4px;cursor:pointer">Save</button>
+                <button onclick="resetApiKey()"
+                    style="background:#ef5350;border:none;color:white;padding:5px 10px;border-radius:4px;cursor:pointer"
+                    title="Reset to Default">Reset</button>
             </div>
             <p style="font-size:0.6rem;opacity:0.6;margin-top:5px">Get key from <a
                     href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--cyan)">Google AI
@@ -2245,6 +2248,13 @@
                 document.getElementById('aiKeyConfig').style.display = 'none';
                 aiAddMsg('🔑 API Key updated! Try asking again.', false);
             }
+        };
+
+        window.resetApiKey = function () {
+            localStorage.removeItem('gemini_api_key');
+            initAI();
+            document.getElementById('aiKeyConfig').style.display = 'none';
+            aiAddMsg('🔄 API Key reset to Default (OpenAI).', false);
         };
 
         async function aiCallOpenAI(key, userMessage) {
