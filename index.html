@@ -2202,12 +2202,12 @@
 4. **No Markdown**: Use only HTML tags.`;
 
         // ══════════════════════════════════════════
-        // ── GEMINI API INTEGRATION (SDK) ──
+        // ── GEMINI / OPENAI API INTEGRATION ──
         // ══════════════════════════════════════════
-        const GEMINI_API_KEY = 'AIzaSyDkICUOxtLiC4tMD-ahRQW5IIdaeFOQBME';
+        const DEFAULT_API_KEY = 'sk-521cb07d869d4ff8b5ad4243a946d150';
 
         function getApiKey() {
-            return localStorage.getItem('gemini_api_key') || GEMINI_API_KEY;
+            return localStorage.getItem('gemini_api_key') || DEFAULT_API_KEY;
         }
 
         // Initialize SDK (Lazily or re-init on key change)
@@ -2217,12 +2217,22 @@
 
         function initAI() {
             const key = getApiKey();
-            genAI = new GoogleGenerativeAI(key);
-            model = genAI.getGenerativeModel({
-                model: "gemini-1.5-flash",
-                systemInstruction: GEMINI_SYSTEM_PROMPT
-            });
-            chatSession = null; // Reset session on re-init
+            if (key.startsWith('sk-')) {
+                // OpenAI Mode
+                genAI = null; model = null; chatSession = null;
+                console.log('🤖 AI Mode: OpenAI (sk- key detected)');
+            } else {
+                // Gemini Mode
+                try {
+                    genAI = new GoogleGenerativeAI(key);
+                    model = genAI.getGenerativeModel({
+                        model: "gemini-1.5-flash",
+                        systemInstruction: GEMINI_SYSTEM_PROMPT
+                    });
+                    chatSession = null;
+                    console.log('🤖 AI Mode: Gemini');
+                } catch (e) { console.warn('Gemini Init Failed:', e); }
+            }
         }
 
         initAI();
@@ -2237,6 +2247,29 @@
             }
         };
 
+        async function aiCallOpenAI(key, userMessage) {
+            const url = 'https://api.openai.com/v1/chat/completions';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${key}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o-mini",
+                    messages: [
+                        { role: "system", content: GEMINI_SYSTEM_PROMPT },
+                        { role: "user", content: userMessage }
+                    ],
+                    max_tokens: 1000,
+                    temperature: 0.8
+                })
+            });
+            const data = await response.json();
+            if (data.error) throw new Error(data.error.message);
+            return mdToHtml(data.choices[0].message.content);
+        }
+
         // mdToHtml helper
         function mdToHtml(text) {
             return text
@@ -2250,25 +2283,38 @@
         }
 
         async function aiCallGemini(userMessage) {
+            const key = getApiKey();
+
+            // 1. Check for OpenAI Key
+            if (key.startsWith('sk-')) {
+                try {
+                    return await aiCallOpenAI(key, userMessage);
+                } catch (err) {
+                    document.getElementById('aiKeyConfig').style.display = 'block';
+                    aiAddMsg(`⚠️ <strong>OpenAI Error</strong>: ${err.message}.<br>Check your key.`, false);
+                    return aiRespondLocal(userMessage);
+                }
+            }
+
+            // 2. Default to Gemini
             try {
-                if (!chatSession) {
+                if (!chatSession && model) {
                     chatSession = model.startChat({
                         history: [],
-                        generationConfig: {
-                            maxOutputTokens: 1000,
-                            temperature: 0.8
-                        }
+                        generationConfig: { maxOutputTokens: 1000, temperature: 0.8 }
                     });
                 }
-                const result = await chatSession.sendMessage(userMessage);
-                const response = result.response;
-                const text = response.text();
-                return mdToHtml(text);
+
+                if (chatSession) {
+                    const result = await chatSession.sendMessage(userMessage);
+                    return mdToHtml(result.response.text());
+                } else {
+                    throw new Error('Gemini model not initialized');
+                }
             } catch (err) {
                 console.warn('Gemini SDK failed, trying raw REST API...', err);
-                // ── RAW REST API FALLBACK ──
                 try {
-                    const key = getApiKey();
+                    // Raw REST fallback for Gemini
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
                     const response = await fetch(url, {
                         method: 'POST',
@@ -2279,9 +2325,7 @@
                     });
                     const data = await response.json();
                     if (data.error) throw new Error(data.error.message);
-                    if (!data.candidates || !data.candidates[0].content) throw new Error('No response candidates');
-                    const text = data.candidates[0].content.parts[0].text;
-                    return mdToHtml(text);
+                    return mdToHtml(data.candidates[0].content.parts[0].text);
                 } catch (restErr) {
                     document.getElementById('aiKeyConfig').style.display = 'block';
                     aiAddMsg(`⚠️ <strong>Connection Failed</strong>: ${restErr.message}.<br>Please update your API Key below.`, false);
