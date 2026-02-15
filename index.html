@@ -2211,29 +2211,36 @@
         }
 
         async function aiCallAI(userMessage) {
-            const url = 'https://api.openai.com/v1/chat/completions';
+            // DeepSeek API Endpoint
+            const url = 'https://api.deepseek.com/chat/completions';
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + OPENAI_API_KEY
+                        'Authorization': 'Bearer sk-521cb07d869d4ff8b5ad4243a946d150'
                     },
                     body: JSON.stringify({
-                        model: 'gpt-4o-mini',
+                        model: 'deepseek-chat',
                         messages: [
                             { role: 'system', content: GEMINI_SYSTEM_PROMPT },
                             { role: 'user', content: userMessage }
                         ],
-                        max_tokens: 1000,
-                        temperature: 0.8
+                        stream: false
                     })
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: { message: 'Unknown Error' } }));
+                    console.error('API Error Details:', errorData);
+                    throw new Error(errorData.error.message || response.statusText);
+                }
+
                 const data = await response.json();
-                if (data.error) throw new Error(data.error.message);
                 return mdToHtml(data.choices[0].message.content);
             } catch (err) {
-                 aiAddMsg('âš ï¸ <strong>OpenAI Error</strong>: ' + err.message, false);
+                 console.error('Fetch failed:', err);
+                 aiAddMsg('âš ï¸ <strong>DeepSeek Connection Error</strong>:<br>' + err.message + '<br><small>Tip: Use a Local Server (vs Code Live Server)</small>', false);
                  return aiRespondLocal(userMessage);
             }
         }
