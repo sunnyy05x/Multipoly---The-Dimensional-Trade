@@ -2211,36 +2211,33 @@
         }
 
         async function aiCallAI(userMessage) {
-            // DeepSeek API Endpoint
-            const url = 'https://api.deepseek.com/chat/completions';
+            // Gemini API Key (Hardcoded as requested)
+            const API_KEY = 'AIzaSyDkICUOxtLiC4tMD-ahRQW5IIdaeFOQBME';
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
             try {
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer sk-521cb07d869d4ff8b5ad4243a946d150'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        model: 'deepseek-chat',
-                        messages: [
-                            { role: 'system', content: GEMINI_SYSTEM_PROMPT },
-                            { role: 'user', content: userMessage }
-                        ],
-                        stream: false
+                        contents: [{
+                            parts: [{ text: GEMINI_SYSTEM_PROMPT + '\n\nUser: ' + userMessage }]
+                        }]
                     })
                 });
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({ error: { message: 'Unknown Error' } }));
-                    console.error('API Error Details:', errorData);
+                    console.error('Gemini API Error:', errorData);
                     throw new Error(errorData.error.message || response.statusText);
                 }
 
                 const data = await response.json();
-                return mdToHtml(data.choices[0].message.content);
+                const text = data.candidates[0].content.parts[0].text;
+                return mdToHtml(text);
             } catch (err) {
                  console.error('Fetch failed:', err);
-                 aiAddMsg('âš ï¸ <strong>DeepSeek Connection Error</strong>:<br>' + err.message + '<br><small>Tip: Use a Local Server (vs Code Live Server)</small>', false);
+                 aiAddMsg('âš ï¸ <strong>Gemini Error</strong>:<br>' + err.message, false);
                  return aiRespondLocal(userMessage);
             }
         }
