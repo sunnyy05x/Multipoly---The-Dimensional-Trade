@@ -158,6 +158,33 @@
             height: 100%
         }
 
+        .active-token {
+            transform: scale(1.4);
+            filter: drop-shadow(0 0 8px var(--gold));
+            z-index: 10;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            background: rgba(255, 215, 0, 0.2);
+            animation: pulse-token 1.5s infinite;
+        }
+
+        @keyframes pulse-token {
+            0% {
+                transform: scale(1.4);
+                box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+            }
+
+            70% {
+                transform: scale(1.5);
+                box-shadow: 0 0 0 6px rgba(255, 215, 0, 0);
+            }
+
+            100% {
+                transform: scale(1.4);
+                box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+            }
+        }
+
         .tile .house-count {
             position: absolute;
             top: 1px;
@@ -946,6 +973,29 @@
             transform: scale(1.05);
             box-shadow: 0 0 15px var(--cyan);
         }
+
+        .landing-anim {
+            animation: land-thud 0.4s ease-out !important;
+        }
+
+        @keyframes land-thud {
+            0% {
+                transform: scale(3.5);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.8);
+            }
+
+            80% {
+                transform: scale(2.2);
+            }
+
+            100% {
+                transform: scale(2.0);
+            }
+        }
     </style>
 </head>
 
@@ -1001,6 +1051,70 @@
     </div>
 
     <script type="module">
+        // ── SOUND MANAGER (Synthesized Audio) ──
+        const SoundManager = {
+            ctx: null,
+            init: () => {
+                if (!SoundManager.ctx) {
+                    SoundManager.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                } else if (SoundManager.ctx.state === 'suspended') {
+                    SoundManager.ctx.resume();
+                }
+            },
+            play: (type) => {
+                if (!SoundManager.ctx) return;
+                const osc = SoundManager.ctx.createOscillator();
+                const gain = SoundManager.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(SoundManager.ctx.destination);
+
+                const now = SoundManager.ctx.currentTime;
+                if (type === 'step') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'buy') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.setValueAtTime(1200, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'pay') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.setValueAtTime(600, now + 0.1);
+                    osc.frequency.setValueAtTime(1000, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+                    osc.start(now); osc.stop(now + 0.6);
+                } else if (type === 'roll') {
+                    // Noise burst simulation
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(100, now);
+                    osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now); osc.stop(now + 0.15);
+                } else if (type === 'error') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
+                }
+            }
+        };
 
 
         // ── SVG TOKENS ──
@@ -1191,7 +1305,7 @@
                 players.forEach((p, i) => {
                     if (p.pos === t.id) {
                         const tk = document.createElement('div');
-                        tk.className = 'player-token';
+                        tk.className = i === current ? 'player-token active-token' : 'player-token';
                         tk.innerHTML = PLAYER_SVGS[i];
                         el.appendChild(tk);
                     }
@@ -1240,6 +1354,7 @@
         function rollDice() {
             if (turnPhase !== 'roll' || gameOver) return;
             const p = players[current];
+            SoundManager.play('roll');
             lastDice = [Math.ceil(Math.random() * 6), Math.ceil(Math.random() * 6)];
             const total = lastDice[0] + lastDice[1];
             document.getElementById('d1').textContent = lastDice[0];
@@ -1250,18 +1365,47 @@
             logMsg(`${p.name} rolled ${lastDice[0]}+${lastDice[1]}=${total}`, current);
 
             if (p.inJail) {
-                if (lastDice[0] === lastDice[1]) { p.inJail = false; p.jailTurns = 0; logMsg(`${p.name} rolled doubles! Escaped Black Hole!`, current); }
+                if (lastDice[0] === lastDice[1]) { p.inJail = false; p.jailTurns = 0; SoundManager.play('win'); logMsg(`${p.name} rolled doubles! Escaped Black Hole!`, current); }
                 else {
                     p.jailTurns++;
-                    if (p.jailTurns >= 3) { p.inJail = false; p.jailTurns = 0; p.gold -= 50; logMsg(`${p.name} paid 50g to escape Black Hole.`, current); checkBankruptcy(current); }
-                    else { logMsg(`${p.name} stuck in Black Hole. (Turn ${p.jailTurns}/3)`, current); turnPhase = 'done'; updateButtons(); renderDashboard(); return; }
+                    if (p.jailTurns >= 3) { p.inJail = false; p.jailTurns = 0; p.gold -= 50; SoundManager.play('pay'); logMsg(`${p.name} paid 50g to escape Black Hole.`, current); checkBankruptcy(current); }
+                    else { logMsg(`${p.name} stuck in Black Hole. (Turn ${p.jailTurns}/3)`, current); SoundManager.play('error'); turnPhase = 'done'; updateButtons(); renderDashboard(); return; }
                 }
             }
-            const oldPos = p.pos;
-            p.pos = (p.pos + total) % 40;
-            if (p.pos < oldPos) { p.gold += 200; giveRandomCards(current, 2); logMsg(`${p.name} passed The Big Bang! +200g +2 cards`, current); }
-            updateTokens(); turnPhase = 'action';
-            handleLanding(); updateButtons(); renderDashboard(); refreshTooltips();
+
+            // Animate movement step-by-step
+            let movesLeft = total;
+            document.getElementById('btnRoll').disabled = true; // Disable until animation finishes
+
+            function step() {
+                if (movesLeft > 0) {
+                    movesLeft--;
+                    p.pos = (p.pos + 1) % 40;
+                    SoundManager.play('step');
+                    if (p.pos === 0) { // Passed/Landed on GO
+                        p.gold += 200;
+                        giveRandomCards(current, 2);
+                        SoundManager.play('win');
+                        logMsg(`${p.name} passed The Big Bang! +200g +2 cards`, current);
+                        renderDashboard();
+                    }
+                    updateTokens();
+                    // Speed up slightly if roll is high, but keep visible steps
+                    setTimeout(step, 200);
+                } else {
+                    const tokenEl = document.querySelector(`.active-token`);
+                    if (tokenEl) {
+                        tokenEl.classList.add('landing-anim');
+                        setTimeout(() => tokenEl.classList.remove('landing-anim'), 500);
+                    }
+                    turnPhase = 'action';
+                    handleLanding();
+                    updateButtons();
+                    renderDashboard();
+                    refreshTooltips();
+                }
+            }
+            step();
         }
 
         function moveToTile(pIdx, tileId, collectGo) {
@@ -1273,14 +1417,14 @@
         function handleLanding() {
             const p = players[current]; const tile = TILES[p.pos];
             logMsg(`${p.name} landed on ${tile.name}`, current);
-            if (tile.type === 'tax') { p.gold -= tile.amount; logMsg(`${p.name} pays ${tile.amount}g tax.`, current); checkBankruptcy(current); }
-            else if (tile.type === 'gotojail') { sendToJail(current); }
-            else if (tile.type === 'chance') { const card = CHANCE_CARDS[Math.floor(Math.random() * CHANCE_CARDS.length)]; logMsg(`🔬 ${card.text}`, current); card.action(current); }
-            else if (tile.type === 'chest') { const card = CHEST_CARDS[Math.floor(Math.random() * CHEST_CARDS.length)]; logMsg(`📄 ${card.text}`, current); card.action(current); }
-            else if (tile.type === 'station') { giveRandomCards(current, 1); logMsg(`🚀 ${p.name} gains 1 resource card!`, current); }
+            if (tile.type === 'tax') { p.gold -= tile.amount; SoundManager.play('pay'); logMsg(`${p.name} pays ${tile.amount}g tax.`, current); checkBankruptcy(current); }
+            else if (tile.type === 'gotojail') { SoundManager.play('error'); sendToJail(current); }
+            else if (tile.type === 'chance') { const card = CHANCE_CARDS[Math.floor(Math.random() * CHANCE_CARDS.length)]; SoundManager.play('roll'); logMsg(`🔬 ${card.text}`, current); card.action(current); }
+            else if (tile.type === 'chest') { const card = CHEST_CARDS[Math.floor(Math.random() * CHEST_CARDS.length)]; SoundManager.play('roll'); logMsg(`📄 ${card.text}`, current); card.action(current); }
+            else if (tile.type === 'station') { giveRandomCards(current, 1); SoundManager.play('win'); logMsg(`🚀 ${p.name} gains 1 resource card!`, current); }
             else if (tile.group) {
                 const owner = getOwner(tile.id);
-                if (owner !== null && owner !== current) { const rent = calcRent(tile, owner); p.gold -= rent; players[owner].gold += rent; logMsg(`${p.name} pays ${rent}g rent to ${players[owner].name}`, current); checkBankruptcy(current); }
+                if (owner !== null && owner !== current) { const rent = calcRent(tile, owner); p.gold -= rent; players[owner].gold += rent; SoundManager.play('pay'); logMsg(`${p.name} pays ${rent}g rent to ${players[owner].name}`, current); checkBankruptcy(current); }
             }
             renderDashboard(); updateTokens();
         }
@@ -1298,6 +1442,7 @@
             const p = players[current]; const tile = TILES[p.pos];
             if (!tile.group || getOwner(tile.id) !== null || p.gold < tile.cost) return;
             p.gold -= tile.cost; p.props.push({ id: tile.id, houses: 0 });
+            SoundManager.play('buy');
             logMsg(`${p.name} bought ${tile.name} for ${tile.cost}g!`, current);
             renderDashboard(); updateTokens(); updateButtons(); refreshTooltips();
         }
@@ -1403,6 +1548,7 @@
         function payJail() {
             const p = players[current]; if (!p.inJail || p.gold < 50) return;
             p.gold -= 50; p.inJail = false; p.jailTurns = 0;
+            SoundManager.play('pay');
             logMsg(`${p.name} paid 50g to escape Black Hole.`, current);
             renderDashboard(); updateButtons();
         }
@@ -2220,6 +2366,7 @@
 
         // ── GAME START ──
         function startGame(num) {
+            SoundManager.init(); // Initialize audio context on user interaction
             document.getElementById('setupModal').style.display = 'none';
             players = [];
             for (let i = 0; i < num; i++) {
