@@ -699,6 +699,79 @@
             background: rgba(255, 215, 0, .05)
         }
 
+        /* Debt Settlement Modal */
+        .debt-header {
+            color: #ef5350;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(239, 83, 80, .5);
+            animation: debt-pulse 1s infinite;
+        }
+
+        @keyframes debt-pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .7;
+            }
+        }
+
+        .debt-amount {
+            font-size: 1.2rem;
+            color: #ef5350;
+            font-weight: bold;
+            margin: 6px 0;
+        }
+
+        .debt-sell-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            margin: 4px 0;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: .6rem;
+            transition: all .2s;
+        }
+
+        .debt-sell-item:hover {
+            border-color: var(--gold);
+            background: rgba(255, 215, 0, .05);
+        }
+
+        .debt-sell-item .sell-name {
+            font-weight: bold;
+        }
+
+        .debt-sell-item .sell-value {
+            color: var(--gold);
+        }
+
+        .debt-sell-btn {
+            background: rgba(239, 83, 80, .15);
+            border-color: #ef5350;
+            color: #ef5350;
+            padding: 3px 10px;
+            font-size: .55rem;
+        }
+
+        .debt-sell-btn:hover:not(:disabled) {
+            background: rgba(239, 83, 80, .3);
+            box-shadow: 0 0 8px rgba(239, 83, 80, .3);
+        }
+
+        .debt-section-title {
+            font-size: .65rem;
+            color: var(--cyan);
+            margin: 10px 0 4px;
+            text-align: left;
+        }
+
         .action-card h4 {
             color: var(--gold);
             font-size: .7rem;
@@ -1017,6 +1090,9 @@
     </div>
     <div class="modal-overlay" id="quizModal">
         <div class="modal-box" id="quizContent"></div>
+    </div>
+    <div class="modal-overlay" id="debtModal">
+        <div class="modal-box" id="debtContent"></div>
     </div>
 
     <div class="modal-overlay" id="setupModal" style="display:flex; z-index: 300;">
@@ -1580,38 +1656,155 @@
             jailBtn.style.display = (p.inJail && p.gold >= 50) ? 'inline-block' : 'none';
         }
 
-        // ── BANKRUPTCY & WIN ──
-        function checkBankruptcy(pIdx) {
-            if (gameOver) return;
-            const p = players[pIdx];
-            if (p.gold < 0) {
-                // Check if they have buildings to sell
-                let totalSellValue = 0;
-                p.props.forEach(pp => {
-                    const t = TILES[pp.id];
-                    totalSellValue += pp.houses * (Math.floor((t.houseCost || 50) / 2));
-                    totalSellValue += Math.floor(t.cost / 2);
-                });
-                if (p.gold + totalSellValue < 0) {
-                    triggerBankruptcy(pIdx);
-                } else {
-                    logMsg(`⚠ ${p.name} is in debt! Sell buildings or properties!`, pIdx);
-                }
-            }
-        }
+// ── BANKRUPTCY & WIN ──
+let debtPlayerIdx = -1;
 
-        function triggerBankruptcy(loser) {
-            gameOver = true;
-            const winner = 1 - loser;
-            document.getElementById('gameoverBox').innerHTML = `
-  <h2>💀 BANKRUPTCY</h2>
-  <p>${players[loser].name} has gone bankrupt!</p>
-  <div style="margin:15px 0">${PLAYER_SVGS[winner]}</div>
-  <h2 style="color:var(--cyan)">${players[winner].name} WINS!</h2>
-  <p style="opacity:.7">The dimensional trade is over.</p>
-  <button onclick="location.reload()" style="margin-top:15px;border-color:var(--gold);color:var(--gold)">🔄 New Game</button>`;
-            document.getElementById('gameoverOverlay').classList.add('show');
+function checkBankruptcy(pIdx) {
+    if (gameOver) return;
+    const p = players[pIdx];
+    if (p.gold < 0) {
+        let totalSellValue = getTotalSellValue(pIdx);
+        if (totalSellValue === 0) {
+            triggerBankruptcy(pIdx);
+        } else {
+            debtPlayerIdx = pIdx;
+            logMsg(`⚠ ${p.name} is in debt! Must sell to pay off ${Math.abs(p.gold)}g!`, pIdx);
+            renderDebtModal(pIdx);
         }
+    }
+}
+
+function getTotalSellValue(pIdx) {
+    const p = players[pIdx];
+    let total = 0;
+    p.props.forEach(pp => {
+        const t = TILES[pp.id];
+        total += pp.houses * Math.floor((t.houseCost || 50) / 2);
+        total += Math.floor(t.cost / 2);
+    });
+    total += (p.inv.M + p.inv.L + p.inv.T) * 25;
+    return total;
+}
+
+function renderDebtModal(pIdx) {
+    const p = players[pIdx];
+    const debt = Math.abs(p.gold);
+    let html = `<div class="debt-header">⚠ DEBT SETTLEMENT ⚠</div>`;
+    html += `<p>${p.name} owes <span class="debt-amount">${debt}g</span></p>`;
+    html += `<p style="font-size:.55rem;opacity:.7">You must sell assets until your gold is ≥ 0</p>`;
+    if (p.props.length > 0) {
+        html += `<div class="debt-section-title">🏠 Properties</div>`;
+        p.props.forEach(pp => {
+            const t = TILES[pp.id];
+            const houseSellPrice = Math.floor((t.houseCost || 50) / 2);
+            const propSellPrice = Math.floor(t.cost / 2);
+            if (pp.houses > 0) {
+                html += `<div class="debt-sell-item"><span class="sell-name" style="color:${GROUPS[t.group]}">${t.name} 🏠×${pp.houses}</span><span class="sell-value">+${houseSellPrice}g/house</span><button class="debt-sell-btn" onclick="sellHouse(${pp.id})">Sell 1 House</button></div>`;
+            }
+            html += `<div class="debt-sell-item"><span class="sell-name" style="color:${GROUPS[t.group]}">${t.name}</span><span class="sell-value">+${propSellPrice}g</span><button class="debt-sell-btn" onclick="sellProperty(${pp.id})" ${pp.houses > 0 ? 'disabled title="Sell houses first"' : ''}>Sell Property</button></div>`;
+        });
+    }
+    const totalCards = p.inv.M + p.inv.L + p.inv.T;
+    if (totalCards > 0) {
+        html += `<div class="debt-section-title">🃏 Resource Cards (25g each)</div>`;
+        ['M', 'L', 'T'].forEach(type => {
+            if (p.inv[type] > 0) {
+                const color = type === 'M' ? '#e91e63' : type === 'L' ? '#2196f3' : '#4caf50';
+                html += `<div class="debt-sell-item"><span class="sell-name" style="color:${color}">${type} ×${p.inv[type]}</span><span class="sell-value">+25g</span><button class="debt-sell-btn" onclick="sellResourceCard('${type}')">Sell 1</button></div>`;
+            }
+        });
+    }
+    if (p.props.length === 0 && totalCards === 0 && p.gold < 0) {
+        html += `<p style="color:#ef5350;margin-top:10px;font-weight:bold">💀 Nothing left to sell! You are bankrupt!</p>`;
+        html += `<div class="btns"><button onclick="confirmBankruptcy(${pIdx})" style="border-color:#ef5350;color:#ef5350">Accept Defeat</button></div>`;
+    }
+    document.getElementById('debtContent').innerHTML = html;
+    document.getElementById('debtModal').classList.add('show');
+}
+
+function sellHouse(tileId) {
+    if (debtPlayerIdx < 0) return;
+    const p = players[debtPlayerIdx];
+    const prop = p.props.find(pp => pp.id === tileId);
+    if (!prop || prop.houses <= 0) return;
+    const t = TILES[tileId];
+    const sellPrice = Math.floor((t.houseCost || 50) / 2);
+    prop.houses--;
+    p.gold += sellPrice;
+    SoundManager.play('buy');
+    logMsg(`${p.name} sold a house on ${t.name} for ${sellPrice}g`, debtPlayerIdx);
+    afterSell(debtPlayerIdx);
+}
+
+function sellProperty(tileId) {
+    if (debtPlayerIdx < 0) return;
+    const p = players[debtPlayerIdx];
+    const propIdx = p.props.findIndex(pp => pp.id === tileId);
+    if (propIdx < 0) return;
+    const prop = p.props[propIdx];
+    if (prop.houses > 0) return;
+    const t = TILES[tileId];
+    const sellPrice = Math.floor(t.cost / 2);
+    p.props.splice(propIdx, 1);
+    p.gold += sellPrice;
+    SoundManager.play('buy');
+    logMsg(`${p.name} sold ${t.name} for ${sellPrice}g`, debtPlayerIdx);
+    afterSell(debtPlayerIdx);
+}
+
+function sellResourceCard(type) {
+    if (debtPlayerIdx < 0) return;
+    const p = players[debtPlayerIdx];
+    if (p.inv[type] <= 0) return;
+    p.inv[type]--;
+    p.gold += 25;
+    SoundManager.play('buy');
+    logMsg(`${p.name} sold 1 ${type} card for 25g`, debtPlayerIdx);
+    afterSell(debtPlayerIdx);
+}
+
+function afterSell(pIdx) {
+    const p = players[pIdx];
+    renderDashboard(); updateTokens(); refreshTooltips();
+    if (p.gold >= 0) {
+        debtPlayerIdx = -1;
+        document.getElementById('debtModal').classList.remove('show');
+        logMsg(`✅ ${p.name} cleared their debt! Gold: ${p.gold}g`, pIdx);
+        updateButtons();
+    } else {
+        const totalSellValue = getTotalSellValue(pIdx);
+        if (totalSellValue === 0) {
+            triggerBankruptcy(pIdx);
+        } else {
+            renderDebtModal(pIdx);
+        }
+    }
+}
+
+function confirmBankruptcy(pIdx) {
+    document.getElementById('debtModal').classList.remove('show');
+    debtPlayerIdx = -1;
+    triggerBankruptcy(pIdx);
+}
+
+function triggerBankruptcy(loser) {
+    gameOver = true;
+    document.getElementById('debtModal').classList.remove('show');
+    debtPlayerIdx = -1;
+    let winnerIdx = 0, maxGold = -Infinity;
+    players.forEach((p, i) => {
+        if (i !== loser && p.gold > maxGold) { maxGold = p.gold; winnerIdx = i; }
+    });
+    document.getElementById('gameoverBox').innerHTML = `
+   <h2>💀 BANKRUPTCY</h2>
+   <p>${players[loser].name} has gone bankrupt!</p>
+   <div style="margin:15px 0">${PLAYER_SVGS[winnerIdx]}</div>
+   <h2 style="color:var(--cyan)">${players[winnerIdx].name} WINS!</h2>
+   <p style="opacity:.7">The dimensional trade is over.</p>
+   <button onclick="location.reload()" style="margin-top:15px;border-color:var(--gold);color:var(--gold)">🔄 New Game</button>`;
+    document.getElementById('gameoverOverlay').classList.add('show');
+}
+
 
         function triggerGUT(winnerIdx) {
             gameOver = true;
@@ -2403,6 +2596,10 @@
         window.marketSelectGive = marketSelectGive;
         window.marketSelectGet = marketSelectGet;
         window.executeMarketTrade = executeMarketTrade;
+        window.sellHouse = sellHouse;
+        window.sellProperty = sellProperty;
+        window.sellResourceCard = sellResourceCard;
+        window.confirmBankruptcy = confirmBankruptcy;
 
         // ── INIT ──
         // Wait for setup
