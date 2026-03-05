@@ -1207,18 +1207,18 @@
             { id: 1, name: 'Length', formula: 'L', cost: 50, group: 'brown', rent: 10, res: { M: 0, L: 1, T: 0 }, houseCost: 30 },
             { id: 2, name: 'Peer Review', type: 'chest' },
             { id: 3, name: 'Time', formula: 'T', cost: 60, group: 'brown', rent: 12, res: { M: 0, L: 0, T: 1 }, houseCost: 30 },
-            { id: 4, name: 'Income Tax', type: 'tax', amount: 100 },
-            { id: 5, name: 'Station α', type: 'station' },
+            { id: 4, name: 'Income Quiz Pod', type: 'quiz' },
+            { id: 5, name: 'Quiz Pod α', type: 'quiz' },
             { id: 6, name: 'Area', formula: 'L²', cost: 100, group: 'ltblue', rent: 20, res: { M: 0, L: 2, T: 0 }, houseCost: 50 },
             { id: 7, name: 'Experimental Results', type: 'chance' },
             { id: 8, name: 'Volume', formula: 'L³', cost: 100, group: 'ltblue', rent: 20, res: { M: 0, L: 3, T: 0 }, houseCost: 50 },
             { id: 9, name: 'Mass', formula: 'M', cost: 120, group: 'ltblue', rent: 24, res: { M: 1, L: 0, T: 0 }, houseCost: 50 },
             { id: 10, name: 'Black Hole', type: 'jail' },
             { id: 11, name: 'Velocity', formula: 'LT⁻¹', cost: 140, group: 'pink', rent: 28, res: { M: 0, L: 1, T: 1 }, houseCost: 70 },
-            { id: 12, name: 'Dimension Power', type: 'utility' },
+            { id: 12, name: 'Quiz Pod ζ', type: 'quiz' },
             { id: 13, name: 'Acceleration', formula: 'LT⁻²', cost: 140, group: 'pink', rent: 28, res: { M: 0, L: 1, T: 2 }, houseCost: 70 },
             { id: 14, name: 'Frequency', formula: 'T⁻¹', cost: 160, group: 'pink', rent: 32, res: { M: 0, L: 0, T: 1 }, houseCost: 70 },
-            { id: 15, name: 'Station β', type: 'station' },
+            { id: 15, name: 'Quiz Pod β', type: 'quiz' },
             { id: 16, name: 'Momentum', formula: 'MLT⁻¹', cost: 180, group: 'orange', rent: 36, res: { M: 1, L: 1, T: 1 }, houseCost: 90 },
             { id: 17, name: 'Peer Review', type: 'chest' },
             { id: 18, name: 'Force', formula: 'MLT⁻²', cost: 180, group: 'orange', rent: 36, res: { M: 1, L: 1, T: 2 }, houseCost: 90 },
@@ -1228,20 +1228,20 @@
             { id: 22, name: 'Experimental Results', type: 'chance' },
             { id: 23, name: 'Power', formula: 'ML²T⁻³', cost: 240, group: 'red', rent: 48, res: { M: 1, L: 2, T: 3 }, houseCost: 110 },
             { id: 24, name: 'Pressure', formula: 'ML⁻¹T⁻²', cost: 260, group: 'red', rent: 52, res: { M: 1, L: 1, T: 2 }, houseCost: 110 },
-            { id: 25, name: 'Station γ', type: 'station' },
+            { id: 25, name: 'Quiz Pod γ', type: 'quiz' },
             { id: 26, name: 'Surface Tension', formula: 'MT⁻²', cost: 300, group: 'green', rent: 60, res: { M: 1, L: 0, T: 2 }, houseCost: 150 },
             { id: 27, name: 'Peer Review', type: 'chest' },
             { id: 28, name: 'Torque', formula: 'ML²T⁻²', cost: 320, group: 'green', rent: 64, res: { M: 1, L: 2, T: 2 }, houseCost: 150 },
-            { id: 29, name: 'Luxury Tax', type: 'tax', amount: 150 },
+            { id: 29, name: 'Luxury Quiz Pod', type: 'quiz' },
             { id: 30, name: 'Go To Jail', type: 'gotojail' },
             { id: 31, name: 'Viscosity', formula: 'ML⁻¹T⁻¹', cost: 180, group: 'orange', rent: 36, res: { M: 1, L: 1, T: 1 }, houseCost: 90 },
             { id: 32, name: 'Experimental Results', type: 'chance' },
             { id: 33, name: 'Impulse', formula: 'MLT⁻¹', cost: 200, group: 'orange', rent: 40, res: { M: 1, L: 1, T: 1 }, houseCost: 90 },
-            { id: 34, name: 'Station δ', type: 'station' },
+            { id: 34, name: 'Quiz Pod δ', type: 'quiz' },
             { id: 35, name: 'Peer Review', type: 'chest' },
             { id: 36, name: 'Entropy', formula: 'ML²T⁻²K⁻¹', cost: 280, group: 'green', rent: 56, res: { M: 1, L: 2, T: 2 }, houseCost: 150 },
             { id: 37, name: 'Experimental Results', type: 'chance' },
-            { id: 38, name: 'Super Tax', type: 'tax', amount: 200 },
+            { id: 38, name: 'Super Quiz Pod', type: 'quiz' },
             { id: 39, name: 'Dark Energy', formula: 'ML²T⁻²', cost: 350, group: 'green', rent: 70, res: { M: 1, L: 2, T: 2 }, houseCost: 175 }
         ];
 
@@ -1293,8 +1293,8 @@
         }
         function getTileIcon(t) {
             if (t.type === 'go') return '💥'; if (t.type === 'jail') return '🕳️'; if (t.type === 'free') return '🌀';
-            if (t.type === 'gotojail') return '⚠️'; if (t.type === 'station') return '🚀'; if (t.type === 'chance') return '🔬';
-            if (t.type === 'chest') return '📄'; if (t.type === 'tax') return '💰'; if (t.type === 'utility') return '⚡'; return '';
+            if (t.type === 'gotojail') return '⚠️'; if (t.type === 'quiz') return '⚛'; if (t.type === 'chance') return '🔬';
+            if (t.type === 'chest') return '📄'; return '';
         }
 
         // ── TOOLTIP BUILDER ──
@@ -1493,11 +1493,10 @@
         function handleLanding() {
             const p = players[current]; const tile = TILES[p.pos];
             logMsg(`${p.name} landed on ${tile.name}`, current);
-            if (tile.type === 'tax') { p.gold -= tile.amount; SoundManager.play('pay'); logMsg(`${p.name} pays ${tile.amount}g tax.`, current); checkBankruptcy(current); }
+            if (tile.type === 'quiz') { triggerQuiz(); }
             else if (tile.type === 'gotojail') { SoundManager.play('error'); sendToJail(current); }
             else if (tile.type === 'chance') { const card = CHANCE_CARDS[Math.floor(Math.random() * CHANCE_CARDS.length)]; SoundManager.play('roll'); logMsg(`🔬 ${card.text}`, current); card.action(current); }
             else if (tile.type === 'chest') { const card = CHEST_CARDS[Math.floor(Math.random() * CHEST_CARDS.length)]; SoundManager.play('roll'); logMsg(`📄 ${card.text}`, current); card.action(current); }
-            else if (tile.type === 'station') { giveRandomCards(current, 1); SoundManager.play('win'); logMsg(`🚀 ${p.name} gains 1 resource card!`, current); }
             else if (tile.group) {
                 const owner = getOwner(tile.id);
                 if (owner !== null && owner !== current) { const rent = calcRent(tile, owner); p.gold -= rent; players[owner].gold += rent; SoundManager.play('pay'); logMsg(`${p.name} pays ${rent}g rent to ${players[owner].name}`, current); checkBankruptcy(current); }
@@ -1656,154 +1655,154 @@
             jailBtn.style.display = (p.inJail && p.gold >= 50) ? 'inline-block' : 'none';
         }
 
-// ── BANKRUPTCY & WIN ──
-let debtPlayerIdx = -1;
+        // ── BANKRUPTCY & WIN ──
+        let debtPlayerIdx = -1;
 
-function checkBankruptcy(pIdx) {
-    if (gameOver) return;
-    const p = players[pIdx];
-    if (p.gold < 0) {
-        let totalSellValue = getTotalSellValue(pIdx);
-        if (totalSellValue === 0) {
-            triggerBankruptcy(pIdx);
-        } else {
-            debtPlayerIdx = pIdx;
-            logMsg(`⚠ ${p.name} is in debt! Must sell to pay off ${Math.abs(p.gold)}g!`, pIdx);
-            renderDebtModal(pIdx);
-        }
-    }
-}
-
-function getTotalSellValue(pIdx) {
-    const p = players[pIdx];
-    let total = 0;
-    p.props.forEach(pp => {
-        const t = TILES[pp.id];
-        total += pp.houses * Math.floor((t.houseCost || 50) / 2);
-        total += Math.floor(t.cost / 2);
-    });
-    total += (p.inv.M + p.inv.L + p.inv.T) * 25;
-    return total;
-}
-
-function renderDebtModal(pIdx) {
-    const p = players[pIdx];
-    const debt = Math.abs(p.gold);
-    let html = `<div class="debt-header">⚠ DEBT SETTLEMENT ⚠</div>`;
-    html += `<p>${p.name} owes <span class="debt-amount">${debt}g</span></p>`;
-    html += `<p style="font-size:.55rem;opacity:.7">You must sell assets until your gold is ≥ 0</p>`;
-    if (p.props.length > 0) {
-        html += `<div class="debt-section-title">🏠 Properties</div>`;
-        p.props.forEach(pp => {
-            const t = TILES[pp.id];
-            const houseSellPrice = Math.floor((t.houseCost || 50) / 2);
-            const propSellPrice = Math.floor(t.cost / 2);
-            if (pp.houses > 0) {
-                html += `<div class="debt-sell-item"><span class="sell-name" style="color:${GROUPS[t.group]}">${t.name} 🏠×${pp.houses}</span><span class="sell-value">+${houseSellPrice}g/house</span><button class="debt-sell-btn" onclick="sellHouse(${pp.id})">Sell 1 House</button></div>`;
+        function checkBankruptcy(pIdx) {
+            if (gameOver) return;
+            const p = players[pIdx];
+            if (p.gold < 0) {
+                let totalSellValue = getTotalSellValue(pIdx);
+                if (totalSellValue === 0) {
+                    triggerBankruptcy(pIdx);
+                } else {
+                    debtPlayerIdx = pIdx;
+                    logMsg(`⚠ ${p.name} is in debt! Must sell to pay off ${Math.abs(p.gold)}g!`, pIdx);
+                    renderDebtModal(pIdx);
+                }
             }
-            html += `<div class="debt-sell-item"><span class="sell-name" style="color:${GROUPS[t.group]}">${t.name}</span><span class="sell-value">+${propSellPrice}g</span><button class="debt-sell-btn" onclick="sellProperty(${pp.id})" ${pp.houses > 0 ? 'disabled title="Sell houses first"' : ''}>Sell Property</button></div>`;
-        });
-    }
-    const totalCards = p.inv.M + p.inv.L + p.inv.T;
-    if (totalCards > 0) {
-        html += `<div class="debt-section-title">🃏 Resource Cards (25g each)</div>`;
-        ['M', 'L', 'T'].forEach(type => {
-            if (p.inv[type] > 0) {
-                const color = type === 'M' ? '#e91e63' : type === 'L' ? '#2196f3' : '#4caf50';
-                html += `<div class="debt-sell-item"><span class="sell-name" style="color:${color}">${type} ×${p.inv[type]}</span><span class="sell-value">+25g</span><button class="debt-sell-btn" onclick="sellResourceCard('${type}')">Sell 1</button></div>`;
-            }
-        });
-    }
-    if (p.props.length === 0 && totalCards === 0 && p.gold < 0) {
-        html += `<p style="color:#ef5350;margin-top:10px;font-weight:bold">💀 Nothing left to sell! You are bankrupt!</p>`;
-        html += `<div class="btns"><button onclick="confirmBankruptcy(${pIdx})" style="border-color:#ef5350;color:#ef5350">Accept Defeat</button></div>`;
-    }
-    document.getElementById('debtContent').innerHTML = html;
-    document.getElementById('debtModal').classList.add('show');
-}
-
-function sellHouse(tileId) {
-    if (debtPlayerIdx < 0) return;
-    const p = players[debtPlayerIdx];
-    const prop = p.props.find(pp => pp.id === tileId);
-    if (!prop || prop.houses <= 0) return;
-    const t = TILES[tileId];
-    const sellPrice = Math.floor((t.houseCost || 50) / 2);
-    prop.houses--;
-    p.gold += sellPrice;
-    SoundManager.play('buy');
-    logMsg(`${p.name} sold a house on ${t.name} for ${sellPrice}g`, debtPlayerIdx);
-    afterSell(debtPlayerIdx);
-}
-
-function sellProperty(tileId) {
-    if (debtPlayerIdx < 0) return;
-    const p = players[debtPlayerIdx];
-    const propIdx = p.props.findIndex(pp => pp.id === tileId);
-    if (propIdx < 0) return;
-    const prop = p.props[propIdx];
-    if (prop.houses > 0) return;
-    const t = TILES[tileId];
-    const sellPrice = Math.floor(t.cost / 2);
-    p.props.splice(propIdx, 1);
-    p.gold += sellPrice;
-    SoundManager.play('buy');
-    logMsg(`${p.name} sold ${t.name} for ${sellPrice}g`, debtPlayerIdx);
-    afterSell(debtPlayerIdx);
-}
-
-function sellResourceCard(type) {
-    if (debtPlayerIdx < 0) return;
-    const p = players[debtPlayerIdx];
-    if (p.inv[type] <= 0) return;
-    p.inv[type]--;
-    p.gold += 25;
-    SoundManager.play('buy');
-    logMsg(`${p.name} sold 1 ${type} card for 25g`, debtPlayerIdx);
-    afterSell(debtPlayerIdx);
-}
-
-function afterSell(pIdx) {
-    const p = players[pIdx];
-    renderDashboard(); updateTokens(); refreshTooltips();
-    if (p.gold >= 0) {
-        debtPlayerIdx = -1;
-        document.getElementById('debtModal').classList.remove('show');
-        logMsg(`✅ ${p.name} cleared their debt! Gold: ${p.gold}g`, pIdx);
-        updateButtons();
-    } else {
-        const totalSellValue = getTotalSellValue(pIdx);
-        if (totalSellValue === 0) {
-            triggerBankruptcy(pIdx);
-        } else {
-            renderDebtModal(pIdx);
         }
-    }
-}
 
-function confirmBankruptcy(pIdx) {
-    document.getElementById('debtModal').classList.remove('show');
-    debtPlayerIdx = -1;
-    triggerBankruptcy(pIdx);
-}
+        function getTotalSellValue(pIdx) {
+            const p = players[pIdx];
+            let total = 0;
+            p.props.forEach(pp => {
+                const t = TILES[pp.id];
+                total += pp.houses * Math.floor((t.houseCost || 50) / 2);
+                total += Math.floor(t.cost / 2);
+            });
+            total += (p.inv.M + p.inv.L + p.inv.T) * 25;
+            return total;
+        }
 
-function triggerBankruptcy(loser) {
-    gameOver = true;
-    document.getElementById('debtModal').classList.remove('show');
-    debtPlayerIdx = -1;
-    let winnerIdx = 0, maxGold = -Infinity;
-    players.forEach((p, i) => {
-        if (i !== loser && p.gold > maxGold) { maxGold = p.gold; winnerIdx = i; }
-    });
-    document.getElementById('gameoverBox').innerHTML = `
+        function renderDebtModal(pIdx) {
+            const p = players[pIdx];
+            const debt = Math.abs(p.gold);
+            let html = `<div class="debt-header">⚠ DEBT SETTLEMENT ⚠</div>`;
+            html += `<p>${p.name} owes <span class="debt-amount">${debt}g</span></p>`;
+            html += `<p style="font-size:.55rem;opacity:.7">You must sell assets until your gold is ≥ 0</p>`;
+            if (p.props.length > 0) {
+                html += `<div class="debt-section-title">🏠 Properties</div>`;
+                p.props.forEach(pp => {
+                    const t = TILES[pp.id];
+                    const houseSellPrice = Math.floor((t.houseCost || 50) / 2);
+                    const propSellPrice = Math.floor(t.cost / 2);
+                    if (pp.houses > 0) {
+                        html += `<div class="debt-sell-item"><span class="sell-name" style="color:${GROUPS[t.group]}">${t.name} 🏠×${pp.houses}</span><span class="sell-value">+${houseSellPrice}g/house</span><button class="debt-sell-btn" onclick="sellHouse(${pp.id})">Sell 1 House</button></div>`;
+                    }
+                    html += `<div class="debt-sell-item"><span class="sell-name" style="color:${GROUPS[t.group]}">${t.name}</span><span class="sell-value">+${propSellPrice}g</span><button class="debt-sell-btn" onclick="sellProperty(${pp.id})" ${pp.houses > 0 ? 'disabled title="Sell houses first"' : ''}>Sell Property</button></div>`;
+                });
+            }
+            const totalCards = p.inv.M + p.inv.L + p.inv.T;
+            if (totalCards > 0) {
+                html += `<div class="debt-section-title">🃏 Resource Cards (25g each)</div>`;
+                ['M', 'L', 'T'].forEach(type => {
+                    if (p.inv[type] > 0) {
+                        const color = type === 'M' ? '#e91e63' : type === 'L' ? '#2196f3' : '#4caf50';
+                        html += `<div class="debt-sell-item"><span class="sell-name" style="color:${color}">${type} ×${p.inv[type]}</span><span class="sell-value">+25g</span><button class="debt-sell-btn" onclick="sellResourceCard('${type}')">Sell 1</button></div>`;
+                    }
+                });
+            }
+            if (p.props.length === 0 && totalCards === 0 && p.gold < 0) {
+                html += `<p style="color:#ef5350;margin-top:10px;font-weight:bold">💀 Nothing left to sell! You are bankrupt!</p>`;
+                html += `<div class="btns"><button onclick="confirmBankruptcy(${pIdx})" style="border-color:#ef5350;color:#ef5350">Accept Defeat</button></div>`;
+            }
+            document.getElementById('debtContent').innerHTML = html;
+            document.getElementById('debtModal').classList.add('show');
+        }
+
+        function sellHouse(tileId) {
+            if (debtPlayerIdx < 0) return;
+            const p = players[debtPlayerIdx];
+            const prop = p.props.find(pp => pp.id === tileId);
+            if (!prop || prop.houses <= 0) return;
+            const t = TILES[tileId];
+            const sellPrice = Math.floor((t.houseCost || 50) / 2);
+            prop.houses--;
+            p.gold += sellPrice;
+            SoundManager.play('buy');
+            logMsg(`${p.name} sold a house on ${t.name} for ${sellPrice}g`, debtPlayerIdx);
+            afterSell(debtPlayerIdx);
+        }
+
+        function sellProperty(tileId) {
+            if (debtPlayerIdx < 0) return;
+            const p = players[debtPlayerIdx];
+            const propIdx = p.props.findIndex(pp => pp.id === tileId);
+            if (propIdx < 0) return;
+            const prop = p.props[propIdx];
+            if (prop.houses > 0) return;
+            const t = TILES[tileId];
+            const sellPrice = Math.floor(t.cost / 2);
+            p.props.splice(propIdx, 1);
+            p.gold += sellPrice;
+            SoundManager.play('buy');
+            logMsg(`${p.name} sold ${t.name} for ${sellPrice}g`, debtPlayerIdx);
+            afterSell(debtPlayerIdx);
+        }
+
+        function sellResourceCard(type) {
+            if (debtPlayerIdx < 0) return;
+            const p = players[debtPlayerIdx];
+            if (p.inv[type] <= 0) return;
+            p.inv[type]--;
+            p.gold += 25;
+            SoundManager.play('buy');
+            logMsg(`${p.name} sold 1 ${type} card for 25g`, debtPlayerIdx);
+            afterSell(debtPlayerIdx);
+        }
+
+        function afterSell(pIdx) {
+            const p = players[pIdx];
+            renderDashboard(); updateTokens(); refreshTooltips();
+            if (p.gold >= 0) {
+                debtPlayerIdx = -1;
+                document.getElementById('debtModal').classList.remove('show');
+                logMsg(`✅ ${p.name} cleared their debt! Gold: ${p.gold}g`, pIdx);
+                updateButtons();
+            } else {
+                const totalSellValue = getTotalSellValue(pIdx);
+                if (totalSellValue === 0) {
+                    triggerBankruptcy(pIdx);
+                } else {
+                    renderDebtModal(pIdx);
+                }
+            }
+        }
+
+        function confirmBankruptcy(pIdx) {
+            document.getElementById('debtModal').classList.remove('show');
+            debtPlayerIdx = -1;
+            triggerBankruptcy(pIdx);
+        }
+
+        function triggerBankruptcy(loser) {
+            gameOver = true;
+            document.getElementById('debtModal').classList.remove('show');
+            debtPlayerIdx = -1;
+            let winnerIdx = 0, maxGold = -Infinity;
+            players.forEach((p, i) => {
+                if (i !== loser && p.gold > maxGold) { maxGold = p.gold; winnerIdx = i; }
+            });
+            document.getElementById('gameoverBox').innerHTML = `
    <h2>💀 BANKRUPTCY</h2>
    <p>${players[loser].name} has gone bankrupt!</p>
    <div style="margin:15px 0">${PLAYER_SVGS[winnerIdx]}</div>
    <h2 style="color:var(--cyan)">${players[winnerIdx].name} WINS!</h2>
    <p style="opacity:.7">The dimensional trade is over.</p>
    <button onclick="location.reload()" style="margin-top:15px;border-color:var(--gold);color:var(--gold)">🔄 New Game</button>`;
-    document.getElementById('gameoverOverlay').classList.add('show');
-}
+            document.getElementById('gameoverOverlay').classList.add('show');
+        }
 
 
         function triggerGUT(winnerIdx) {
@@ -1830,8 +1829,7 @@ function triggerBankruptcy(loser) {
             if (tile.group) html += `<p>Group: <span style="color:${GROUPS[tile.group]}">${tile.group}</span></p>`;
             if (owner !== null) { const prop = players[owner].props.find(pp => pp.id === id); html += `<p>Owner: ${players[owner].name} | Houses: ${prop.houses}</p>`; }
             else if (tile.group) html += `<p style="opacity:.6">Unowned</p>`;
-            if (tile.type === 'tax') html += `<p>Tax: ${tile.amount}g</p>`;
-            if (tile.type === 'station') html += `<p>Grants 1 random Resource Card</p>`;
+            if (tile.type === 'quiz') html += `<p>Dimensional Quiz Pod: Earn both Gold and Resource Cards!</p>`;
             html += `<div class="btns"><button onclick="closeModal('modal')">Close</button></div>`;
             mc.innerHTML = html; document.getElementById('modal').classList.add('show');
         }
@@ -2144,14 +2142,15 @@ function triggerBankruptcy(loser) {
 
         function aiRespondQuiz(raw) {
             // Direct answer first!
-            let resp = '✅ <strong>Yes!</strong> There are quizzes in Multipoly! 🧪📝<br><br>';
-            resp += 'When you land on <strong>Chance</strong> or <strong>Peer Review</strong> (Community Chest) tiles, there\'s a <strong>40% chance</strong> of triggering a <strong>Dimensional Quiz</strong> and a <strong>15% chance</strong> of an Action Challenge!<br><br>';
+            let resp = '✅ <strong>Yes!</strong> Dimensional Quiz Pods and Action Challenges are the heart of Multipoly! 🧪📝<br><br>';
+            resp += 'You can find <strong>Quiz Pods</strong> all over the board (they replaced old taxes and stations). Landing on one triggers a <strong>Dimensional Quiz</strong>!<br><br>';
             resp += '<strong>Quiz Tiers & Rewards:</strong><br>';
             resp += '• 🟢 <strong>Basic</strong> — +50 Gold Mass & 1 Dimension Card<br>';
             resp += '• 🟡 <strong>Intermediate</strong> — +100 Gold Mass & 1 Card<br>';
             resp += '• 🔴 <strong>Advanced</strong> — +150 Gold Mass & 2 Cards<br><br>';
-            resp += '⚠️ Wrong answers cost Gold Mass, so study your dimensional formulas! The quizzes cover physics flashcard questions, and Action Challenges include timed events.<br>';
-            resp += '<br>💡 <em>Pro tip: Mastering derivations in this chat will give you an edge on quiz RNG!</em>';
+            resp += 'Also, landing on <strong>Experimental Results</strong> (Chance) or <strong>Peer Review</strong> (Chest) has a <strong>40% chance</strong> of triggering a quiz and a <strong>15% chance</strong> for an <strong>Action Challenge</strong> (like the Ruler Challenge)!<br><br>';
+            resp += '⚠️ Wrong answers cost a small amount of Gold Mass, but correctly identifying dimensions is the fastest way to build your empire!<br>';
+            resp += '<br>💡 <em>Pro tip: Master your MLT derivations here to dominate the Quiz Pods!</em>';
             return resp;
         }
 
@@ -2306,10 +2305,12 @@ function triggerBankruptcy(loser) {
                     '• ⏰ After 3 turns, auto-release (costs 50g)<br><br>' +
                     '🎮 <em>Sometimes being stuck isn\'t bad — you avoid landing on enemy properties!</em>';
             }
-            if (/station|dimension\s*station/.test(raw)) {
-                return '🚀 <strong>Dimension Stations (α, β, γ, δ)</strong><br><br>' +
-                    'Landing on any station gives you <strong>1 random Dimension Card</strong>. They cannot be purchased — they\'re neutral resource nodes!<br>' +
-                    '<em>💡 Free resources with zero risk — always a welcome landing!</em>';
+            if (/station|quiz\s*pod|pod/.test(raw)) {
+                return '⚛ <strong>Dimensional Quiz Pods</strong><br><br>' +
+                    'The board is now powered by Quiz Pods! Landing on any pod (α, β, γ, δ, ζ, etc.) triggers a <strong>Dimensional Quiz</strong>.<br>' +
+                    '• Correct answers grant <strong>Gold Mass AND Dimension Cards</strong>!<br>' +
+                    '• They replaced the old tax tiles and neutral stations to make the game more focused on physics knowledge.<br>' +
+                    '<em>💡 These are your primary resource hubs — landing on them is always an opportunity!</em>';
             }
             if (/big\s*bang|pass\s*go|start\s*tile/.test(raw)) {
                 return '💥 <strong>The Big Bang</strong> (GO tile):<br><br>' +
@@ -2319,11 +2320,7 @@ function triggerBankruptcy(loser) {
                     '🎮 <em>This is your economic heartbeat — each orbit around the board refuels you!</em>';
             }
             if (/tax|income\s*tax|luxury\s*tax|super\s*tax/.test(raw)) {
-                return '💸 <strong>Tax Tiles</strong> — The inevitable dimensional toll:<br>' +
-                    '• Income Tax: <strong>-100g</strong><br>' +
-                    '• Luxury Tax: <strong>-150g</strong><br>' +
-                    '• Super Tax: <strong>-200g</strong><br><br>' +
-                    '🎮 <em>No escape from the tax collector. Budget for these!</em>';
+                return '💸 <strong>Taxes removed!</strong> The dimension-tax authority has been abolished. All tax tiles have been converted into <strong>Quiz Pods</strong> where you earn wealth through knowledge instead of losing it to fees! ⚛';
             }
             if (/property|properties|license|buy\s*license/.test(raw)) {
                 return '🏗️ <strong>Properties</strong> — Your Scientific Empire:<br><br>' +
@@ -2422,10 +2419,9 @@ function triggerBankruptcy(loser) {
                 '• 💙 <strong>L</strong> (Length) — used for properties with L in the formula<br>' +
                 '• 💚 <strong>T</strong> (Time) — used for properties with T in the formula<br><br>' +
                 '<strong>How to earn cards:</strong><br>' +
+                '• ⚛ <strong>Quiz Pods</strong> → Pass a quiz to earn cards + gold! (Best way!)<br>' +
                 '• 💥 Pass The Big Bang (GO) → +2 random cards<br>' +
-                '• 🚀 Land on Dimension Stations → +1 card<br>' +
-                '• 📝 Answer quiz questions correctly → +1 or +2 cards<br>' +
-                '• 🎴 Chance/Chest rewards → variable<br>' +
+                '• 📝 Answer correctly on Chance/Chest tiles<br>' +
                 '• 🔄 Use the <strong>Market</strong> to trade 3-for-1<br><br>' +
                 '🎮 <em>Spend them at the Lab Bench to derive houses on your properties!</em>';
         }
